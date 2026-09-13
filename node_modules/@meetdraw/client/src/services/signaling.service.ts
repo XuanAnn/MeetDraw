@@ -25,6 +25,7 @@ class SignalingService {
   private maxReconnectAttempts = 5;
   private reconnectTimeout: any = null;
   private messageQueue: SignalMessage[] = [];
+  private lastMessages: Map<SignalType, SignalMessage> = new Map();
   public selfPeerId: string | null = null;
   public currentRoomId: string | null = null;
 
@@ -66,6 +67,7 @@ class SignalingService {
               const payload = message.payload as RoomJoinedPayload;
               this.selfPeerId = payload.selfId;
               this.currentRoomId = payload.roomId;
+              this.lastMessages.set(message.type, message);
             }
 
             this.dispatch(message);
@@ -109,6 +111,7 @@ class SignalingService {
     this.selfPeerId = null;
     this.currentRoomId = null;
     this.messageQueue = [];
+    this.lastMessages.clear();
   }
 
   send<T>(message: SignalMessage<T>) {
@@ -135,6 +138,7 @@ class SignalingService {
 
   joinRoom(roomId: string, username: string, userId?: string, email?: string) {
     this.currentRoomId = roomId;
+    this.lastMessages.delete('ROOM_JOINED');
     this.send({
       type: 'JOIN_ROOM',
       roomId,
@@ -188,6 +192,15 @@ class SignalingService {
     }
     const set = this.listeners.get(type)!;
     set.add(handler as SignalHandler);
+
+    // ROOM_JOINED can arrive while another hook is still mounting. Replay the
+    // latest room confirmation so peer negotiation is never lost.
+    if (type === 'ROOM_JOINED') {
+      const lastMessage = this.lastMessages.get(type);
+      if (lastMessage) {
+        queueMicrotask(() => handler(lastMessage as SignalMessage<T>));
+      }
+    }
 
     return () => {
       set.delete(handler as SignalHandler);

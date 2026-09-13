@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { mediaStreamManager } from '../services/webrtc.service';
 import { LocalMediaState } from '../types';
 
@@ -11,9 +11,11 @@ export function useMediaStream(autoStart = true) {
   });
 
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
+  const [mediaError, setMediaError] = useState<string | null>(null);
 
   const startMedia = useCallback(async (video = true, audio = true) => {
     try {
+      setMediaError(null);
       const stream = await mediaStreamManager.getLocalMedia(video, audio);
       setLocalState({
         stream,
@@ -22,7 +24,12 @@ export function useMediaStream(autoStart = true) {
         isScreenSharing: false,
       });
       return stream;
-    } catch {
+    } catch (error: any) {
+      setMediaError(
+        error?.name === 'NotAllowedError'
+          ? 'Camera and microphone permission was denied. Allow access in the browser address bar and retry.'
+          : `Camera/microphone could not be started: ${error?.message || 'unknown error'}`
+      );
       return null;
     }
   }, []);
@@ -97,5 +104,6 @@ export function useMediaStream(autoStart = true) {
     startMedia,
     startScreenShare,
     stopScreenShare,
+    mediaError,
   };
 }

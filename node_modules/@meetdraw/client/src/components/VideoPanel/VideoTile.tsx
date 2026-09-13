@@ -30,20 +30,6 @@ export const VideoTile: React.FC<VideoTileProps> = ({
 
   return (
     <div className="relative aspect-video bg-gray-900 rounded-xl overflow-hidden border border-gray-800 shadow-md flex items-center justify-center group">
-      {/* Remote Audio Playback Element */}
-      {!isLocal && stream && (
-        <audio
-          autoPlay
-          playsInline
-          ref={(el) => {
-            if (el && el.srcObject !== stream) {
-              el.srcObject = stream;
-              el.play().catch(() => {});
-            }
-          }}
-        />
-      )}
-
       {hasVideoTrack ? (
         <video
           ref={videoRef}

@@ -47,8 +47,14 @@ export class SinglePeerConnection {
       this.callbacks.onConnectionStateChange(this.peerId, this.pc.connectionState);
     };
 
+    this.pc.oniceconnectionstatechange = () => {
+      if (this.pc.iceConnectionState === 'connected' || this.pc.iceConnectionState === 'completed') {
+        this.log.info(`ICE_CONNECTED ${this.peerId}`);
+      }
+    };
+
     this.pc.ontrack = (event) => {
-      this.log.info(`Received remote track (${event.track.kind}) from ${this.peerId}`);
+      this.log.info(`REMOTE_TRACK ${event.track.kind} from ${this.peerId}`);
       if (event.streams && event.streams[0]) {
         event.streams[0].getTracks().forEach((track) => {
           if (!this.remoteStream.getTracks().some((t) => t.id === track.id)) {
@@ -88,37 +94,40 @@ export class SinglePeerConnection {
     return this.dataChannel;
   }
 
-  addLocalStream(stream: MediaStream) {
+  async addLocalStream(stream: MediaStream): Promise<boolean> {
+    let changed = false;
     const transceivers = this.pc.getTransceivers ? this.pc.getTransceivers() : [];
-    const senders = this.pc.getSenders ? this.pc.getSenders() : [];
 
-    stream.getTracks().forEach((track) => {
+    for (const track of stream.getTracks()) {
       try {
-        // Try assigning to existing transceiver
         const transceiver = transceivers.find(
           (t) => t.sender?.track?.kind === track.kind || t.receiver?.track?.kind === track.kind
         );
         if (transceiver && transceiver.sender) {
-          transceiver.sender.replaceTrack(track);
-          this.log.info(`Assigned ${track.kind} track to transceiver for peer ${this.peerId}`);
-          return;
+          if (transceiver.sender.track?.id === track.id) continue;
+          await transceiver.sender.replaceTrack(track);
+          changed = true;
+          this.log.info(`ADD_LOCAL_TRACK ${track.kind} to transceiver for peer ${this.peerId}`);
+          continue;
         }
 
-        // Try replacing on existing sender
-        const sender = senders.find((s) => s.track?.kind === track.kind);
+        const sender = this.pc.getSenders().find((s) => s.track?.kind === track.kind);
         if (sender) {
-          sender.replaceTrack(track);
+          if (sender.track?.id === track.id) continue;
+          await sender.replaceTrack(track);
+          changed = true;
           this.log.info(`Replaced ${track.kind} track on sender for peer ${this.peerId}`);
-          return;
+          continue;
         }
 
-        // Otherwise addTrack
         this.pc.addTrack(track, stream);
-        this.log.info(`Added ${track.kind} track for peer ${this.peerId}`);
+        changed = true;
+        this.log.info(`ADD_LOCAL_TRACK ${track.kind} via addTrack for peer ${this.peerId}`);
       } catch (err) {
         this.log.warn(`Could not add/replace track ${track.kind}:`, err);
       }
-    });
+    }
+    return changed;
   }
 
   async createOffer(): Promise<RTCSessionDescriptionInit> {
@@ -127,6 +136,7 @@ export class SinglePeerConnection {
       offerToReceiveVideo: true,
     });
     await this.pc.setLocalDescription(offer);
+    this.log.info(`CREATE_OFFER for peer ${this.peerId}`);
     return offer;
   }
 
@@ -136,13 +146,17 @@ export class SinglePeerConnection {
       offerToReceiveVideo: true,
     });
     await this.pc.setLocalDescription(answer);
+    this.log.info(`CREATE_ANSWER for peer ${this.peerId}`);
     return answer;
   }
 
   async setRemoteDescription(sdp: RTCSessionDescriptionInit): Promise<void> {
     this.isSettingRemoteDescription = true;
-    await this.pc.setRemoteDescription(new RTCSessionDescription(sdp));
-    this.isSettingRemoteDescription = false;
+    try {
+      await this.pc.setRemoteDescription(new RTCSessionDescription(sdp));
+    } finally {
+      this.isSettingRemoteDescription = false;
+    }
 
     // Flush any ICE candidates queued while waiting for remote description
     while (this.pendingCandidates.length > 0) {

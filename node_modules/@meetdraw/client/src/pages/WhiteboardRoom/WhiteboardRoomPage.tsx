@@ -75,6 +75,7 @@ export const WhiteboardRoomPage: React.FC = () => {
     isAudioMuted,
     isVideoMuted,
     isScreenSharing,
+    mediaError,
     toggleAudio,
     toggleVideo,
     startScreenShare,
@@ -379,6 +380,12 @@ export const WhiteboardRoomPage: React.FC = () => {
             remotePeers={remotePeers}
             remoteStreams={remoteStreams}
           />
+        )}
+
+        {mediaError && (
+          <div className="absolute left-4 bottom-4 z-30 max-w-sm rounded-lg border border-rose-400/40 bg-rose-950/90 px-3 py-2 text-xs text-rose-100 shadow-lg">
+            {mediaError}
+          </div>
         )}
 
         {/* Live Chat Drawer */}

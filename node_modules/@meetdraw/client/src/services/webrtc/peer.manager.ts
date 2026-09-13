@@ -38,6 +38,9 @@ export class PeerManager {
   private roomId: string | null = null;
   private listeners: PeerManagerListener = {};
   private unsubscribers: Array<() => void> = [];
+  private localStream: MediaStream | null = null;
+  private pendingInitialOffers = new Set<string>();
+  private negotiatingPeers = new Set<string>();
 
   constructor() {}
 
@@ -82,15 +85,19 @@ export class PeerManager {
       log.info(`Received OFFER from peer ${msg.senderId}`);
       const peer = this.getOrCreatePeer(msg.senderId);
 
-      // Add local stream tracks if available
-      const localStream = mediaStreamManager.getStream();
-      if (localStream) {
-        peer.addLocalStream(localStream);
-      }
+      try {
+        log.info('RECEIVE_OFFER', msg.senderId);
+        const localStream = this.localStream || mediaStreamManager.getStream();
+        if (localStream) {
+          await peer.addLocalStream(localStream);
+        }
 
-      await peer.setRemoteDescription(msg.payload.sdp);
-      const answer = await peer.createAnswer();
-      signalingService.sendAnswer(this.roomId!, msg.senderId, answer);
+        await peer.setRemoteDescription(msg.payload.sdp);
+        const answer = await peer.createAnswer();
+        signalingService.sendAnswer(this.roomId!, msg.senderId, answer);
+      } catch (err) {
+        log.warn(`Could not accept offer from ${msg.senderId}:`, err);
+      }
     });
 
     // 4. Answer received from a peer
@@ -99,7 +106,12 @@ export class PeerManager {
       log.info(`Received ANSWER from peer ${msg.senderId}`);
       const peer = this.peers.get(msg.senderId);
       if (peer) {
-        await peer.setRemoteDescription(msg.payload.sdp);
+        try {
+          log.info('RECEIVE_ANSWER', msg.senderId);
+          await peer.setRemoteDescription(msg.payload.sdp);
+        } catch (err) {
+          log.warn(`Could not accept answer from ${msg.senderId}:`, err);
+        }
       }
     });
 
@@ -119,22 +131,45 @@ export class PeerManager {
       this.removePeer(msg.senderId);
     });
 
-    this.unsubscribers = [unsubRoomJoined, unsubUserJoined, unsubOffer, unsubAnswer, unsubIce, unsubUserLeft];
+    this.unsubscribers.push(
+      unsubRoomJoined,
+      unsubUserJoined,
+      unsubOffer,
+      unsubAnswer,
+      unsubIce,
+      unsubUserLeft
+    );
   }
 
   private async connectToPeer(peerId: string, isInitiator: boolean) {
     const peer = this.getOrCreatePeer(peerId);
 
-    // Add local media stream
-    const localStream = mediaStreamManager.getStream();
+    const localStream = this.localStream || mediaStreamManager.getStream();
+    if (isInitiator && !localStream) {
+      this.pendingInitialOffers.add(peerId);
+      log.info(`Waiting for LOCAL_STREAM_READY before creating offer for ${peerId}`);
+      return;
+    }
     if (localStream) {
-      peer.addLocalStream(localStream);
+      await peer.addLocalStream(localStream);
     }
 
     if (isInitiator) {
       peer.initDataChannel();
+      await this.createAndSendOffer(peerId, peer);
+    }
+  }
+
+  private async createAndSendOffer(peerId: string, peer: SinglePeerConnection) {
+    if (this.negotiatingPeers.has(peerId) || peer.pc.signalingState !== 'stable' || !this.roomId) return;
+    this.negotiatingPeers.add(peerId);
+    try {
       const offer = await peer.createOffer();
-      signalingService.sendOffer(this.roomId!, peerId, offer);
+      signalingService.sendOffer(this.roomId, peerId, offer);
+    } catch (err) {
+      log.warn(`Could not negotiate offer with ${peerId}:`, err);
+    } finally {
+      this.negotiatingPeers.delete(peerId);
     }
   }
 
@@ -150,6 +185,7 @@ export class PeerManager {
         }
       },
       onConnectionStateChange: (pId, state) => {
+        if (state === 'connected') log.info(`ICE_CONNECTED ${pId}`);
         if (this.listeners.onPeerStateChange) {
           this.listeners.onPeerStateChange(pId, state);
         }
@@ -248,8 +284,33 @@ export class PeerManager {
 
   // Attach new local media stream (e.g. after user grants permission or screen share)
   updateLocalStream(stream: MediaStream) {
+    this.localStream = stream;
+    log.info('LOCAL_STREAM_READY', {
+      audio: stream.getAudioTracks().length,
+      video: stream.getVideoTracks().length,
+    });
+    for (const peerId of this.pendingInitialOffers) {
+      const peer = this.peers.get(peerId);
+      if (peer) {
+        peer.initDataChannel();
+        void this.attachStreamAndNegotiate(peerId, peer, stream, true);
+      }
+    }
+    this.pendingInitialOffers.clear();
     for (const peer of this.peers.values()) {
-      peer.addLocalStream(stream);
+      void this.attachStreamAndNegotiate(peer.peerId, peer, stream);
+    }
+  }
+
+  private async attachStreamAndNegotiate(
+    peerId: string,
+    peer: SinglePeerConnection,
+    stream: MediaStream,
+    forceOffer = false
+  ) {
+    const changed = await peer.addLocalStream(stream);
+    if ((changed || forceOffer) && (forceOffer || peer.pc.remoteDescription) && peer.pc.signalingState === 'stable') {
+      await this.createAndSendOffer(peerId, peer);
     }
   }
 
@@ -265,6 +326,9 @@ export class PeerManager {
     }
     this.peers.clear();
     this.peerUsernames.clear();
+    this.localStream = null;
+    this.pendingInitialOffers.clear();
+    this.negotiatingPeers.clear();
     this.roomId = null;
   }
 }

@@ -70,75 +70,8 @@ export class MediaStreamManager {
       this.notifyListeners(stream);
       return stream;
     } catch (err: any) {
-      log.warn(`Camera+Mic access failed (${err.name}: ${err.message}). Trying audio-only fallback...`);
-
-      // 1. Fallback: Try microphone only (very common if camera is in use or unavailable)
-      if (audio) {
-        try {
-          const audioOnlyStream = await navigator.mediaDevices.getUserMedia({
-            video: false,
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true,
-            },
-          });
-
-          // Generate a dummy canvas video track so video rendering components don't crash
-          try {
-            const canvas = document.createElement('canvas');
-            canvas.width = 640;
-            canvas.height = 480;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-              ctx.fillStyle = '#0f172a';
-              ctx.fillRect(0, 0, 640, 480);
-            }
-            const canvasStream = (canvas as any).captureStream ? (canvas as any).captureStream(1) : new MediaStream();
-            const dummyVideoTrack = canvasStream.getVideoTracks()[0];
-            if (dummyVideoTrack) {
-              audioOnlyStream.addTrack(dummyVideoTrack);
-            }
-          } catch {
-            // ignore canvas fallback
-          }
-
-          this.localStream = audioOnlyStream;
-          this.isAudioMuted = false;
-          this.isVideoMuted = true;
-          log.info('Audio-only microphone stream acquired successfully!');
-          this.notifyListeners(audioOnlyStream);
-          return audioOnlyStream;
-        } catch (audioErr: any) {
-          log.warn(`Audio-only fallback also failed: ${audioErr.name} (${audioErr.message})`);
-        }
-      }
-
-      // 2. Fallback: Synthetic silent audio track if completely devoid of audio hardware
-      const fallbackStream = new MediaStream();
-      try {
-        const AudioCtxClass = window.AudioContext || (window as any).webkitAudioContext;
-        if (AudioCtxClass) {
-          const ctx = new AudioCtxClass();
-          const osc = ctx.createOscillator();
-          const dst = ctx.createMediaStreamDestination();
-          const gain = ctx.createGain();
-          gain.gain.value = 0.00001; // Silent
-          osc.connect(gain);
-          gain.connect(dst);
-          osc.start();
-          const silentAudioTrack = dst.stream.getAudioTracks()[0];
-          if (silentAudioTrack) {
-            fallbackStream.addTrack(silentAudioTrack);
-          }
-        }
-      } catch {
-        // ignore
-      }
-
-      this.localStream = fallbackStream;
-      this.notifyListeners(fallbackStream);
-      return fallbackStream;
+      log.error(`Camera/microphone permission error (${err.name}: ${err.message})`);
+      throw err;
     }
   }
 
