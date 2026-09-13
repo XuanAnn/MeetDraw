@@ -91,12 +91,17 @@ export class PeerManager {
 
       try {
         log.info('RECEIVE_OFFER', msg.senderId);
+
+        // 1. Set remote description from incoming offer first so transceivers match the remote offer m-lines
+        await peer.setRemoteDescription(msg.payload.sdp);
+
+        // 2. Attach local stream tracks to the negotiated transceivers
         const localStream = this.localStream || mediaStreamManager.getStream();
         if (localStream) {
           await peer.addLocalStream(localStream);
         }
 
-        await peer.setRemoteDescription(msg.payload.sdp);
+        // 3. Create answer with bidirectional tracks and send back
         const answer = await peer.createAnswer();
         signalingService.sendAnswer(this.roomId!, msg.senderId, answer);
       } catch (err) {

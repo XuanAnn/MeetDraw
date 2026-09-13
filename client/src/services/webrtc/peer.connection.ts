@@ -121,20 +121,23 @@ export class SinglePeerConnection {
         if (transceiver && transceiver.sender) {
           if (transceiver.direction !== 'sendrecv') {
             transceiver.direction = 'sendrecv';
+            changed = true;
           }
-          if (transceiver.sender.track?.id === track.id) continue;
-          await transceiver.sender.replaceTrack(track);
-          changed = true;
-          this.log.info(`ADD_LOCAL_TRACK ${track.kind} to transceiver for peer ${this.peerId}`);
+          if (transceiver.sender.track?.id !== track.id) {
+            await transceiver.sender.replaceTrack(track);
+            changed = true;
+            this.log.info(`ADD_LOCAL_TRACK ${track.kind} to transceiver for peer ${this.peerId}`);
+          }
           continue;
         }
 
         const sender = this.pc.getSenders().find((s) => s.track?.kind === track.kind);
         if (sender) {
-          if (sender.track?.id === track.id) continue;
-          await sender.replaceTrack(track);
-          changed = true;
-          this.log.info(`Replaced ${track.kind} track on sender for peer ${this.peerId}`);
+          if (sender.track?.id !== track.id) {
+            await sender.replaceTrack(track);
+            changed = true;
+            this.log.info(`Replaced ${track.kind} track on sender for peer ${this.peerId}`);
+          }
           continue;
         }
 
@@ -159,10 +162,7 @@ export class SinglePeerConnection {
   }
 
   async createAnswer(): Promise<RTCSessionDescriptionInit> {
-    const answer = await this.pc.createAnswer({
-      offerToReceiveAudio: true,
-      offerToReceiveVideo: true,
-    });
+    const answer = await this.pc.createAnswer();
     await this.pc.setLocalDescription(answer);
     this.log.info(`CREATE_ANSWER for peer ${this.peerId}`);
     return answer;

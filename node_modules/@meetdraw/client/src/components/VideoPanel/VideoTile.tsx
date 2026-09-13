@@ -66,22 +66,22 @@ export const VideoTile: React.FC<VideoTileProps> = ({
 
     const vTracks = stream.getVideoTracks();
     vTracks.forEach((t) => {
-      t.onunmute = evaluateVideoTracks;
-      t.onmute = evaluateVideoTracks;
-      t.onended = evaluateVideoTracks;
+      t.addEventListener('unmute', evaluateVideoTracks);
+      t.addEventListener('mute', evaluateVideoTracks);
+      t.addEventListener('ended', evaluateVideoTracks);
     });
 
-    stream.onaddtrack = evaluateVideoTracks;
-    stream.onremovetrack = evaluateVideoTracks;
+    stream.addEventListener('addtrack', evaluateVideoTracks);
+    stream.addEventListener('removetrack', evaluateVideoTracks);
 
     return () => {
       vTracks.forEach((t) => {
-        t.onunmute = null;
-        t.onmute = null;
-        t.onended = null;
+        t.removeEventListener('unmute', evaluateVideoTracks);
+        t.removeEventListener('mute', evaluateVideoTracks);
+        t.removeEventListener('ended', evaluateVideoTracks);
       });
-      stream.onaddtrack = null;
-      stream.onremovetrack = null;
+      stream.removeEventListener('addtrack', evaluateVideoTracks);
+      stream.removeEventListener('removetrack', evaluateVideoTracks);
     };
   }, [stream]);
 
