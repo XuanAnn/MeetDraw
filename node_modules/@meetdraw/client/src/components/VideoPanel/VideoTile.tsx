@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { Mic, MicOff, Video, VideoOff, User as UserIcon } from 'lucide-react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { Mic, MicOff, Video, VideoOff } from 'lucide-react';
 
 interface VideoTileProps {
   stream?: MediaStream | null;
@@ -18,27 +18,90 @@ export const VideoTile: React.FC<VideoTileProps> = ({
   isVideoMuted,
   userColor = '#38bdf8',
 }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [hasLiveVideo, setHasLiveVideo] = useState(false);
 
+  // Callback ref guarantees srcObject is attached as soon as the video element mounts or stream updates
+  const setVideoRef = useCallback(
+    (el: HTMLVideoElement | null) => {
+      videoRef.current = el;
+      if (el && stream) {
+        if (el.srcObject !== stream) {
+          el.srcObject = stream;
+        }
+        el.play().catch(() => {});
+      }
+    },
+    [stream]
+  );
+
+  // Re-sync srcObject whenever stream reference changes
   useEffect(() => {
-    if (videoRef.current && stream) {
+    if (videoRef.current && stream && videoRef.current.srcObject !== stream) {
       videoRef.current.srcObject = stream;
+      videoRef.current.play().catch(() => {});
     }
   }, [stream]);
 
-  const hasVideoTrack = stream && stream.getVideoTracks().some((t) => t.enabled && t.readyState === 'live') && !isVideoMuted;
+  // Monitor live state of video tracks in the stream
+  useEffect(() => {
+    if (!stream) {
+      setHasLiveVideo(false);
+      return;
+    }
+
+    const evaluateVideoTracks = () => {
+      const vTracks = stream.getVideoTracks();
+      const hasActive = vTracks.some((t) => t.enabled && t.readyState === 'live');
+      setHasLiveVideo(hasActive);
+      if (hasActive && videoRef.current) {
+        if (videoRef.current.srcObject !== stream) {
+          videoRef.current.srcObject = stream;
+        }
+        videoRef.current.play().catch(() => {});
+      }
+    };
+
+    evaluateVideoTracks();
+
+    const vTracks = stream.getVideoTracks();
+    vTracks.forEach((t) => {
+      t.onunmute = evaluateVideoTracks;
+      t.onmute = evaluateVideoTracks;
+      t.onended = evaluateVideoTracks;
+    });
+
+    stream.onaddtrack = evaluateVideoTracks;
+    stream.onremovetrack = evaluateVideoTracks;
+
+    return () => {
+      vTracks.forEach((t) => {
+        t.onunmute = null;
+        t.onmute = null;
+        t.onended = null;
+      });
+      stream.onaddtrack = null;
+      stream.onremovetrack = null;
+    };
+  }, [stream]);
+
+  const showVideo = hasLiveVideo && !isVideoMuted;
 
   return (
     <div className="relative aspect-video bg-gray-900 rounded-xl overflow-hidden border border-gray-800 shadow-md flex items-center justify-center group">
-      {hasVideoTrack ? (
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted={true} // Muted because audio element plays the sound cleanly without duplicate echo
-          className={`w-full h-full object-cover ${isLocal ? 'scale-x-[-1]' : ''}`}
-        />
-      ) : (
+      {/* Permanent video element: keeps WebRTC rendering pipeline alive without unmounting */}
+      <video
+        ref={setVideoRef}
+        autoPlay
+        playsInline
+        muted={true} // Muted because global audio elements handle voice output cleanly without echo
+        className={`w-full h-full object-cover transition-opacity duration-200 ${
+          isLocal ? 'scale-x-[-1]' : ''
+        } ${showVideo ? 'opacity-100 block' : 'opacity-0 hidden'}`}
+      />
+
+      {/* Avatar fallback when video is not live or is muted */}
+      {!showVideo && (
         <div className="flex flex-col items-center justify-center space-y-2">
           <div
             className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white text-lg shadow-inner transition-all ${

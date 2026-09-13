@@ -66,7 +66,11 @@ export class PeerManager {
       // As the new joiner, connect to existing peers by creating offers
       for (const peer of existingPeers) {
         this.peerUsernames.set(peer.id, peer.username);
-        await this.connectToPeer(peer.id, true);
+        try {
+          await this.connectToPeer(peer.id, true);
+        } catch (err) {
+          log.warn(`Error initiating connection to peer ${peer.id}:`, err);
+        }
       }
     });
 
@@ -119,10 +123,8 @@ export class PeerManager {
     const unsubIce = signalingService.on<IceCandidatePayload>('ICE_CANDIDATE', async (msg) => {
       if (!msg.payload) return;
       log.network(`Received ICE_CANDIDATE from peer ${msg.senderId}`);
-      const peer = this.peers.get(msg.senderId);
-      if (peer) {
-        await peer.addIceCandidate(msg.payload.candidate);
-      }
+      const peer = this.getOrCreatePeer(msg.senderId);
+      await peer.addIceCandidate(msg.payload.candidate);
     });
 
     // 6. User left room
@@ -289,16 +291,24 @@ export class PeerManager {
       audio: stream.getAudioTracks().length,
       video: stream.getVideoTracks().length,
     });
-    for (const peerId of this.pendingInitialOffers) {
+
+    const initialOfferPeers = Array.from(this.pendingInitialOffers);
+    this.pendingInitialOffers.clear();
+
+    // 1. Initial offers for peers waiting for local media
+    for (const peerId of initialOfferPeers) {
       const peer = this.peers.get(peerId);
       if (peer) {
         peer.initDataChannel();
         void this.attachStreamAndNegotiate(peerId, peer, stream, true);
       }
     }
-    this.pendingInitialOffers.clear();
-    for (const peer of this.peers.values()) {
-      void this.attachStreamAndNegotiate(peer.peerId, peer, stream);
+
+    // 2. Subsequent track updates for already negotiated peers
+    for (const [peerId, peer] of this.peers.entries()) {
+      if (!initialOfferPeers.includes(peerId)) {
+        void this.attachStreamAndNegotiate(peerId, peer, stream, false);
+      }
     }
   }
 

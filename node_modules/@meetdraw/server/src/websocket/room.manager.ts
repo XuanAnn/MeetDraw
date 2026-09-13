@@ -92,7 +92,13 @@ export class RoomManager {
   }
 
   getPeerSocket(roomId: string, targetPeerId: string): WebSocket | null {
-    const room = this.rooms.get(roomId);
+    let room = this.rooms.get(roomId);
+    if (!room) {
+      const actualRoomId = this.peerToRoom.get(targetPeerId);
+      if (actualRoomId) {
+        room = this.rooms.get(actualRoomId);
+      }
+    }
     if (!room) return null;
     const peer = room.get(targetPeerId);
     return peer ? peer.ws : null;

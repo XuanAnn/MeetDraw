@@ -65,7 +65,13 @@ class RoomManager {
         }));
     }
     getPeerSocket(roomId, targetPeerId) {
-        const room = this.rooms.get(roomId);
+        let room = this.rooms.get(roomId);
+        if (!room) {
+            const actualRoomId = this.peerToRoom.get(targetPeerId);
+            if (actualRoomId) {
+                room = this.rooms.get(actualRoomId);
+            }
+        }
         if (!room)
             return null;
         const peer = room.get(targetPeerId);

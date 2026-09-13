@@ -53,8 +53,14 @@ export class SinglePeerConnection {
       }
     };
 
+    const notifyTrackUpdate = () => {
+      // Provide a new MediaStream instance with existing tracks so React state reference triggers re-render
+      const updatedStream = new MediaStream(this.remoteStream.getTracks());
+      this.callbacks.onTrack(this.peerId, updatedStream);
+    };
+
     this.pc.ontrack = (event) => {
-      this.log.info(`REMOTE_TRACK ${event.track.kind} from ${this.peerId}`);
+      this.log.info(`REMOTE_TRACK ${event.track.kind} from ${this.peerId} (state: ${event.track.readyState}, muted: ${event.track.muted})`);
       if (event.streams && event.streams[0]) {
         event.streams[0].getTracks().forEach((track) => {
           if (!this.remoteStream.getTracks().some((t) => t.id === track.id)) {
@@ -66,9 +72,18 @@ export class SinglePeerConnection {
         this.remoteStream.addTrack(event.track);
       }
       event.track.onunmute = () => {
-        this.callbacks.onTrack(this.peerId, this.remoteStream);
+        this.log.info(`Track onunmute (${event.track.kind}) from ${this.peerId}`);
+        notifyTrackUpdate();
       };
-      this.callbacks.onTrack(this.peerId, this.remoteStream);
+      event.track.onmute = () => {
+        this.log.info(`Track onmute (${event.track.kind}) from ${this.peerId}`);
+        notifyTrackUpdate();
+      };
+      event.track.onended = () => {
+        this.log.info(`Track onended (${event.track.kind}) from ${this.peerId}`);
+        notifyTrackUpdate();
+      };
+      notifyTrackUpdate();
     };
 
     this.pc.ondatachannel = (event) => {
@@ -104,6 +119,9 @@ export class SinglePeerConnection {
           (t) => t.sender?.track?.kind === track.kind || t.receiver?.track?.kind === track.kind
         );
         if (transceiver && transceiver.sender) {
+          if (transceiver.direction !== 'sendrecv') {
+            transceiver.direction = 'sendrecv';
+          }
           if (transceiver.sender.track?.id === track.id) continue;
           await transceiver.sender.replaceTrack(track);
           changed = true;
