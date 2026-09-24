@@ -132,6 +132,7 @@ export class PeerManager {
         try {
           log.info('RECEIVE_ANSWER', msg.senderId);
           await peer.setRemoteDescription(msg.payload.sdp);
+          peer.syncRemoteTracks();
         } catch (err) {
           log.warn(`Could not accept answer from ${msg.senderId}:`, err);
         }
@@ -239,6 +240,11 @@ export class PeerManager {
 
     const newPeer = new SinglePeerConnection(peerId, callbacks);
     this.peers.set(peerId, newPeer);
+
+    const localStream = this.localStream || mediaStreamManager.getStream();
+    if (localStream) {
+      void newPeer.addLocalStream(localStream);
+    }
 
     this.notifyPeersUpdated();
 

@@ -23,15 +23,65 @@ export class SinglePeerConnection {
     this.callbacks = callbacks;
     this.pc = new RTCPeerConnection(config || DEFAULT_RTC_CONFIGURATION);
 
-    // Pre-allocate audio & video transceivers to ensure SDP always includes m=audio and m=video
-    try {
-      this.pc.addTransceiver('audio', { direction: 'sendrecv' });
-      this.pc.addTransceiver('video', { direction: 'sendrecv' });
-    } catch (e) {
-      this.log.warn('addTransceiver not supported or failed:', e);
+    this.bindEvents();
+  }
+
+  private handleIncomingTrack(track: MediaStreamTrack, stream?: MediaStream) {
+    if (!track) return;
+
+    if (stream) {
+      stream.getTracks().forEach((t) => {
+        if (!this.remoteStream.getTracks().some((existing) => existing.id === t.id)) {
+          this.remoteStream.addTrack(t);
+        }
+      });
     }
 
-    this.bindEvents();
+    if (!this.remoteStream.getTracks().some((existing) => existing.id === track.id)) {
+      this.remoteStream.addTrack(track);
+    }
+
+    const notify = () => {
+      const tracks = this.remoteStream.getTracks();
+      if (tracks.length > 0) {
+        const updatedStream = new MediaStream(tracks);
+        this.callbacks.onTrack(this.peerId, updatedStream);
+      }
+    };
+
+    if (!(track as any).__hasListeners) {
+      (track as any).__hasListeners = true;
+      track.onunmute = () => {
+        this.log.info(`Track onunmute (${track.kind}) from ${this.peerId}`);
+        notify();
+      };
+      track.onmute = () => {
+        this.log.info(`Track onmute (${track.kind}) from ${this.peerId}`);
+        notify();
+      };
+      track.onended = () => {
+        this.log.info(`Track onended (${track.kind}) from ${this.peerId}`);
+        notify();
+      };
+    }
+
+    notify();
+  }
+
+  public syncRemoteTracks() {
+    const receivers = this.pc.getReceivers ? this.pc.getReceivers() : [];
+    for (const receiver of receivers) {
+      if (receiver.track) {
+        this.handleIncomingTrack(receiver.track);
+      }
+    }
+
+    const transceivers = this.pc.getTransceivers ? this.pc.getTransceivers() : [];
+    for (const transceiver of transceivers) {
+      if (transceiver.receiver?.track) {
+        this.handleIncomingTrack(transceiver.receiver.track);
+      }
+    }
   }
 
   private bindEvents() {
@@ -45,45 +95,21 @@ export class SinglePeerConnection {
     this.pc.onconnectionstatechange = () => {
       this.log.info(`Connection state with ${this.peerId}: ${this.pc.connectionState}`);
       this.callbacks.onConnectionStateChange(this.peerId, this.pc.connectionState);
+      if (this.pc.connectionState === 'connected') {
+        this.syncRemoteTracks();
+      }
     };
 
     this.pc.oniceconnectionstatechange = () => {
       if (this.pc.iceConnectionState === 'connected' || this.pc.iceConnectionState === 'completed') {
         this.log.info(`ICE_CONNECTED ${this.peerId}`);
+        this.syncRemoteTracks();
       }
-    };
-
-    const notifyTrackUpdate = () => {
-      // Provide a new MediaStream instance with existing tracks so React state reference triggers re-render
-      const updatedStream = new MediaStream(this.remoteStream.getTracks());
-      this.callbacks.onTrack(this.peerId, updatedStream);
     };
 
     this.pc.ontrack = (event) => {
       this.log.info(`REMOTE_TRACK ${event.track.kind} from ${this.peerId} (state: ${event.track.readyState}, muted: ${event.track.muted})`);
-      if (event.streams && event.streams[0]) {
-        event.streams[0].getTracks().forEach((track) => {
-          if (!this.remoteStream.getTracks().some((t) => t.id === track.id)) {
-            this.remoteStream.addTrack(track);
-          }
-        });
-      }
-      if (!this.remoteStream.getTracks().some((t) => t.id === event.track.id)) {
-        this.remoteStream.addTrack(event.track);
-      }
-      event.track.onunmute = () => {
-        this.log.info(`Track onunmute (${event.track.kind}) from ${this.peerId}`);
-        notifyTrackUpdate();
-      };
-      event.track.onmute = () => {
-        this.log.info(`Track onmute (${event.track.kind}) from ${this.peerId}`);
-        notifyTrackUpdate();
-      };
-      event.track.onended = () => {
-        this.log.info(`Track onended (${event.track.kind}) from ${this.peerId}`);
-        notifyTrackUpdate();
-      };
-      notifyTrackUpdate();
+      this.handleIncomingTrack(event.track, event.streams?.[0]);
     };
 
     this.pc.ondatachannel = (event) => {
@@ -111,36 +137,40 @@ export class SinglePeerConnection {
 
   async addLocalStream(stream: MediaStream): Promise<boolean> {
     let changed = false;
-    const transceivers = this.pc.getTransceivers ? this.pc.getTransceivers() : [];
 
     for (const track of stream.getTracks()) {
       try {
-        const transceiver = transceivers.find(
-          (t) => t.sender?.track?.kind === track.kind || t.receiver?.track?.kind === track.kind
-        );
-        if (transceiver && transceiver.sender) {
-          if (transceiver.direction !== 'sendrecv') {
-            transceiver.direction = 'sendrecv';
-            changed = true;
-          }
-          if (transceiver.sender.track?.id !== track.id) {
-            await transceiver.sender.replaceTrack(track);
-            changed = true;
-            this.log.info(`ADD_LOCAL_TRACK ${track.kind} to transceiver for peer ${this.peerId}`);
-          }
-          continue;
-        }
-
-        const sender = this.pc.getSenders().find((s) => s.track?.kind === track.kind);
+        // 1. Check if a sender already exists for this track kind
+        const sender = this.pc.getSenders().find((s) => s.track?.kind === track.kind || (s as any).kind === track.kind);
         if (sender) {
           if (sender.track?.id !== track.id) {
             await sender.replaceTrack(track);
             changed = true;
             this.log.info(`Replaced ${track.kind} track on sender for peer ${this.peerId}`);
           }
+          // Ensure associated transceiver direction is sendrecv
+          const transceiver = this.pc.getTransceivers?.().find((t) => t.sender === sender);
+          if (transceiver && transceiver.direction !== 'sendrecv') {
+            transceiver.direction = 'sendrecv';
+            changed = true;
+          }
           continue;
         }
 
+        // 2. Check if an existing transceiver without a sender track can be used
+        const transceivers = this.pc.getTransceivers ? this.pc.getTransceivers() : [];
+        const transceiver = transceivers.find(
+          (t) => !t.sender?.track && t.receiver?.track?.kind === track.kind
+        );
+        if (transceiver) {
+          transceiver.direction = 'sendrecv';
+          await transceiver.sender.replaceTrack(track);
+          changed = true;
+          this.log.info(`Associated ${track.kind} track with existing transceiver for peer ${this.peerId}`);
+          continue;
+        }
+
+        // 3. Otherwise add new track directly bound to stream
         this.pc.addTrack(track, stream);
         changed = true;
         this.log.info(`ADD_LOCAL_TRACK ${track.kind} via addTrack for peer ${this.peerId}`);
@@ -152,6 +182,19 @@ export class SinglePeerConnection {
   }
 
   async createOffer(): Promise<RTCSessionDescriptionInit> {
+    const hasAudioSender = this.pc.getSenders().some((s) => s.track?.kind === 'audio');
+    const hasVideoSender = this.pc.getSenders().some((s) => s.track?.kind === 'video');
+    if (!hasAudioSender) {
+      try {
+        this.pc.addTransceiver('audio', { direction: 'recvonly' });
+      } catch (e) {}
+    }
+    if (!hasVideoSender) {
+      try {
+        this.pc.addTransceiver('video', { direction: 'recvonly' });
+      } catch (e) {}
+    }
+
     const offer = await this.pc.createOffer({
       offerToReceiveAudio: true,
       offerToReceiveVideo: true,
@@ -172,6 +215,7 @@ export class SinglePeerConnection {
     this.isSettingRemoteDescription = true;
     try {
       await this.pc.setRemoteDescription(new RTCSessionDescription(sdp));
+      this.syncRemoteTracks();
     } finally {
       this.isSettingRemoteDescription = false;
     }
@@ -185,13 +229,19 @@ export class SinglePeerConnection {
         });
       }
     }
+
+    this.syncRemoteTracks();
   }
 
   async addIceCandidate(candidate: RTCIceCandidateInit): Promise<void> {
-    if (this.pc.remoteDescription && this.pc.remoteDescription.type) {
-      await this.pc.addIceCandidate(new RTCIceCandidate(candidate));
-    } else {
-      this.pendingCandidates.push(candidate);
+    try {
+      if (this.pc.remoteDescription && this.pc.remoteDescription.type) {
+        await this.pc.addIceCandidate(new RTCIceCandidate(candidate));
+      } else {
+        this.pendingCandidates.push(candidate);
+      }
+    } catch (err) {
+      this.log.warn(`Error adding ICE candidate for ${this.peerId}:`, err);
     }
   }
 

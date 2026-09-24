@@ -54,7 +54,7 @@ export const VideoTile: React.FC<VideoTileProps> = ({
       const vTracks = stream.getVideoTracks();
       const hasActive = vTracks.some((t) => t.enabled && t.readyState === 'live');
       setHasLiveVideo(hasActive);
-      if (hasActive && videoRef.current) {
+      if (videoRef.current) {
         if (videoRef.current.srcObject !== stream) {
           videoRef.current.srcObject = stream;
         }
@@ -74,7 +74,13 @@ export const VideoTile: React.FC<VideoTileProps> = ({
     stream.addEventListener('addtrack', evaluateVideoTracks);
     stream.addEventListener('removetrack', evaluateVideoTracks);
 
+    // Periodic evaluation for initial frame arrival in case WebRTC RTP packet reception is slightly delayed
+    const timer = setInterval(evaluateVideoTracks, 500);
+    const timeout = setTimeout(() => clearInterval(timer), 3500);
+
     return () => {
+      clearInterval(timer);
+      clearTimeout(timeout);
       vTracks.forEach((t) => {
         t.removeEventListener('unmute', evaluateVideoTracks);
         t.removeEventListener('mute', evaluateVideoTracks);
@@ -87,22 +93,35 @@ export const VideoTile: React.FC<VideoTileProps> = ({
 
   const showVideo = hasLiveVideo && !isVideoMuted;
 
+  // Trigger play whenever showVideo becomes active
+  useEffect(() => {
+    if (showVideo && videoRef.current) {
+      videoRef.current.play().catch(() => {});
+    }
+  }, [showVideo]);
+
   return (
     <div className="relative aspect-video bg-gray-900 rounded-xl overflow-hidden border border-gray-800 shadow-md flex items-center justify-center group">
-      {/* Permanent video element: keeps WebRTC rendering pipeline alive without unmounting */}
+      {/* Permanent video element: keeps WebRTC rendering pipeline alive in render tree (no display:none) */}
       <video
         ref={setVideoRef}
         autoPlay
         playsInline
         muted={true} // Muted because global audio elements handle voice output cleanly without echo
+        onLoadedMetadata={() => {
+          videoRef.current?.play().catch(() => {});
+        }}
+        onCanPlay={() => {
+          videoRef.current?.play().catch(() => {});
+        }}
         className={`w-full h-full object-cover transition-opacity duration-200 ${
           isLocal ? 'scale-x-[-1]' : ''
-        } ${showVideo ? 'opacity-100 block' : 'opacity-0 hidden'}`}
+        } ${showVideo ? 'opacity-100 relative z-0' : 'opacity-0 absolute inset-0 pointer-events-none'}`}
       />
 
       {/* Avatar fallback when video is not live or is muted */}
       {!showVideo && (
-        <div className="flex flex-col items-center justify-center space-y-2">
+        <div className="flex flex-col items-center justify-center space-y-2 z-10">
           <div
             className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white text-lg shadow-inner transition-all ${
               !isAudioMuted ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-900' : ''
