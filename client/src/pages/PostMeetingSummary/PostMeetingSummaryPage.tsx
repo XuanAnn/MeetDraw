@@ -38,36 +38,8 @@ export const PostMeetingSummaryPage: React.FC = () => {
   const [playbackProgress, setPlaybackProgress] = useState(35); // 35%
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Mock Action items matching PRD
-  const [actionItems, setActionItems] = useState<ActionItem[]>([
-    {
-      id: 'task-1',
-      title: 'Implement Redis Cluster for WebRTC SFU Presence & Mesh Fallback',
-      assignee: 'Alex (Tech Lead)',
-      dueDate: 'Sep 10, 2026',
-      priority: 'High',
-      syncedJira: false,
-      syncedLinear: false,
-    },
-    {
-      id: 'task-2',
-      title: 'Finalize Electric Indigo Design Tokens & Sticky Notes Palette',
-      assignee: 'Chloe (UI/UX)',
-      dueDate: 'Sep 08, 2026',
-      priority: 'Medium',
-      syncedJira: false,
-      syncedLinear: false,
-    },
-    {
-      id: 'task-3',
-      title: 'Run Wireshark UDP vs TCP Performance & Packet Loss Benchmark',
-      assignee: 'Sarah (Network Eng)',
-      dueDate: 'Sep 12, 2026',
-      priority: 'High',
-      syncedJira: false,
-      syncedLinear: false,
-    },
-  ]);
+  // Real Action items for this meeting session
+  const [actionItems, setActionItems] = useState<ActionItem[]>([]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -75,17 +47,25 @@ export const PostMeetingSummaryPage: React.FC = () => {
   };
 
   const handleSyncAllJira = () => {
+    if (actionItems.length === 0) {
+      showToast('No action items available to export.');
+      return;
+    }
     setActionItems((prev) => prev.map((item) => ({ ...item, syncedJira: true })));
-    showToast('Successfully exported 3 Action Items to Jira Board (PROJECT-MEET)!');
+    showToast(`Exported ${actionItems.length} Action Items to Jira!`);
   };
 
   const handleSyncAllLinear = () => {
+    if (actionItems.length === 0) {
+      showToast('No action items available to export.');
+      return;
+    }
     setActionItems((prev) => prev.map((item) => ({ ...item, syncedLinear: true })));
-    showToast('Successfully pushed 3 Issues to Linear (ENG-TEAM-Q4)!');
+    showToast(`Exported ${actionItems.length} Issues to Linear!`);
   };
 
   const handleSendSlack = () => {
-    showToast('Meeting minutes and AI Summary posted to #general-architecture on Slack!');
+    showToast(`Meeting summary for room ${roomId} prepared for sharing!`);
   };
 
   const handleDownloadPNG = () => {
@@ -385,59 +365,69 @@ export const PostMeetingSummaryPage: React.FC = () => {
               <span className="text-[11px] text-slate-400">Click items to toggle sync status</span>
             </div>
 
-            <div className="space-y-2.5">
-              {actionItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-3.5 bg-navy-900 rounded-xl border border-navy-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                >
-                  <div className="space-y-1">
+            {actionItems.length > 0 ? (
+              <div className="space-y-2.5">
+                {actionItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-3.5 bg-navy-900 rounded-xl border border-navy-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <span
+                          className={`text-[9px] font-bold px-1.5 py-0.2 rounded uppercase ${
+                            item.priority === 'High'
+                              ? 'bg-rose-500/20 text-rose-alert border border-rose-500/30'
+                              : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                          }`}
+                        >
+                          {item.priority}
+                        </span>
+                        <span className="text-xs font-bold text-slate-100">{item.title}</span>
+                      </div>
+                      <div className="flex items-center space-x-3 text-[11px] text-slate-400">
+                        <span>Owner: <strong className="text-slate-300">{item.assignee}</strong></span>
+                        <span>•</span>
+                        <span>Due: {item.dueDate}</span>
+                      </div>
+                    </div>
+
+                    {/* Sync status pills */}
                     <div className="flex items-center space-x-2">
                       <span
-                        className={`text-[9px] font-bold px-1.5 py-0.2 rounded uppercase ${
-                          item.priority === 'High'
-                            ? 'bg-rose-500/20 text-rose-alert border border-rose-500/30'
-                            : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center space-x-1 ${
+                          item.syncedJira
+                            ? 'bg-emerald-500/20 text-emerald-active border border-emerald-500/30'
+                            : 'bg-navy-800 text-slate-400'
                         }`}
                       >
-                        {item.priority}
+                        {item.syncedJira && <Check size={10} />}
+                        <span>Jira: {item.syncedJira ? 'Synced' : 'Pending'}</span>
                       </span>
-                      <span className="text-xs font-bold text-slate-100">{item.title}</span>
-                    </div>
-                    <div className="flex items-center space-x-3 text-[11px] text-slate-400">
-                      <span>Owner: <strong className="text-slate-300">{item.assignee}</strong></span>
-                      <span>•</span>
-                      <span>Due: {item.dueDate}</span>
+
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center space-x-1 ${
+                          item.syncedLinear
+                            ? 'bg-indigo-accent/20 text-indigo-glow border border-indigo-accent/30'
+                            : 'bg-navy-800 text-slate-400'
+                        }`}
+                      >
+                        {item.syncedLinear && <Check size={10} />}
+                        <span>Linear: {item.syncedLinear ? 'Synced' : 'Pending'}</span>
+                      </span>
                     </div>
                   </div>
-
-                  {/* Sync status pills */}
-                  <div className="flex items-center space-x-2">
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center space-x-1 ${
-                        item.syncedJira
-                          ? 'bg-emerald-500/20 text-emerald-active border border-emerald-500/30'
-                          : 'bg-navy-800 text-slate-400'
-                      }`}
-                    >
-                      {item.syncedJira && <Check size={10} />}
-                      <span>Jira: {item.syncedJira ? 'Synced' : 'Pending'}</span>
-                    </span>
-
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center space-x-1 ${
-                        item.syncedLinear
-                          ? 'bg-indigo-accent/20 text-indigo-glow border border-indigo-accent/30'
-                          : 'bg-navy-800 text-slate-400'
-                      }`}
-                    >
-                      {item.syncedLinear && <Check size={10} />}
-                      <span>Linear: {item.syncedLinear ? 'Synced' : 'Pending'}</span>
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-6 text-center border border-dashed border-navy-800 rounded-xl bg-navy-900/30 space-y-2">
+                <CheckCircle2 size={24} className="mx-auto text-slate-500" />
+                <div className="text-xs font-semibold text-slate-300">No Action Items Logged</div>
+                <p className="text-[11px] text-slate-500">
+                  Action items and task commitments from meeting chats and transcripts will appear here.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </main>

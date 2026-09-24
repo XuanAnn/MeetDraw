@@ -9,11 +9,13 @@ import {
   UserJoinedPayload,
   UserLeftPayload,
   RoomJoinedPayload,
+  SfuStatsPayload,
 } from '@meetdraw/shared';
 import { SinglePeerConnection } from './peer.connection';
 import { PeerConnectionCallback } from './peer.types';
 import { signalingService } from '../signaling.service';
 import { mediaStreamManager } from './media.stream';
+import { sfuCoordinator } from './sfu.coordinator';
 import { createLogger } from '../../utils/logger';
 
 const log = createLogger('PeerManager');
@@ -30,6 +32,8 @@ export type PeerManagerListener = {
   onWhiteboardEvent?: (peerId: string, event: WhiteboardEvent) => void;
   onChatMessage?: (peerId: string, message: ChatMessage) => void;
   onPeerStateChange?: (peerId: string, state: RTCPeerConnectionState) => void;
+  onSfuStats?: (stats: SfuStatsPayload) => void;
+  onActiveSpeaker?: (speakerId: string) => void;
 };
 
 export class PeerManager {
@@ -48,6 +52,16 @@ export class PeerManager {
     this.roomId = roomId;
     this.listeners = listeners;
     this.bindSignaling();
+
+    // Initialize SFU Coordinator
+    sfuCoordinator.init(roomId, signalingService.selfPeerId || '', {
+      onStatsUpdated: (stats) => {
+        this.listeners.onSfuStats?.(stats);
+      },
+      onActiveSpeakerChanged: (speakerId) => {
+        this.listeners.onActiveSpeaker?.(speakerId);
+      },
+    });
 
     // Automatically push tracks to peers whenever local stream is acquired or updated
     const unsubStream = mediaStreamManager.onStreamUpdated((stream) => {
@@ -297,6 +311,9 @@ export class PeerManager {
       video: stream.getVideoTracks().length,
     });
 
+    // Notify SFU Coordinator to publish tracks upstream
+    sfuCoordinator.publishTracks(stream);
+
     const initialOfferPeers = Array.from(this.pendingInitialOffers);
     this.pendingInitialOffers.clear();
 
@@ -317,6 +334,10 @@ export class PeerManager {
     }
   }
 
+  publishScreenTrack(screenStream: MediaStream) {
+    sfuCoordinator.publishScreenTrack(screenStream);
+  }
+
   private async attachStreamAndNegotiate(
     peerId: string,
     peer: SinglePeerConnection,
@@ -334,6 +355,7 @@ export class PeerManager {
   }
 
   cleanup() {
+    sfuCoordinator.cleanup();
     this.unsubscribers.forEach((u) => u());
     this.unsubscribers = [];
     for (const peer of this.peers.values()) {

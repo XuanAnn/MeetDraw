@@ -19,6 +19,8 @@ import {
   Palette,
   LogOut,
   Database,
+  Zap,
+  Activity,
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { useUserStore } from '../../stores/user.store';
@@ -76,59 +78,8 @@ export const DashboardPage: React.FC = () => {
       });
   }, []);
 
-  // Mocked rich schedule list matching PRD
-  const [meetings, setMeetings] = useState<ScheduledMeeting[]>([
-    {
-      id: 'arch-sync-90',
-      title: 'Microservices & Event Mesh Review',
-      time: '10:00 AM - 11:00 AM',
-      duration: '60 min',
-      tags: ['Architecture', 'Kafka', 'P0'],
-      attendees: ['Alex', 'Sarah', 'David', 'Elena'],
-      isNow: true,
-    },
-    {
-      id: 'sprint-plan-24',
-      title: 'Sprint 24 Planning & Backlog Grooming',
-      time: '02:00 PM - 03:00 PM',
-      duration: '60 min',
-      tags: ['Product', 'Linear', 'Scrum'],
-      attendees: ['Jessica', 'Tom', 'Liam'],
-    },
-    {
-      id: 'ux-design-review',
-      title: 'Checkout Spatial Flow UI/UX Crit',
-      time: '04:30 PM - 05:15 PM',
-      duration: '45 min',
-      tags: ['Design', 'Figma', 'Review'],
-      attendees: ['Chloe', 'Mark'],
-    },
-  ]);
-
-  // Recent Whiteboards
-  const recentBoards: RecentBoard[] = [
-    {
-      id: 'board-auth-flow',
-      title: 'OAuth2 & WebAuthn Token Exchange',
-      updatedAt: '2 hours ago',
-      collaborators: 4,
-      thumbnailColor: 'from-indigo-900/60 to-navy-900',
-    },
-    {
-      id: 'board-db-schema',
-      title: 'PostgreSQL & ClickHouse Hybrid Lakehouse',
-      updatedAt: 'Yesterday',
-      collaborators: 6,
-      thumbnailColor: 'from-cyan-900/60 to-navy-900',
-    },
-    {
-      id: 'board-infra-k8s',
-      title: 'Multi-Region Kubernetes Ingress Mesh',
-      updatedAt: '3 days ago',
-      collaborators: 3,
-      thumbnailColor: 'from-purple-900/60 to-navy-900',
-    },
-  ];
+  // Scheduled meetings list
+  const [meetings, setMeetings] = useState<ScheduledMeeting[]>([]);
 
   // Start Instant Meeting -> redirects through Green Room
   const handleStartInstant = async () => {
@@ -396,73 +347,64 @@ export const DashboardPage: React.FC = () => {
               </span>
             </div>
 
-            <div className="space-y-3">
-              {meetings.map((m) => (
-                <div
-                  key={m.id}
-                  className={`p-4 rounded-xl border transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                    m.isNow
-                      ? 'bg-indigo-accent/10 border-indigo-accent/50 shadow-md shadow-indigo-accent/10'
-                      : 'bg-navy-900/60 border-navy-800 hover:border-navy-700'
-                  }`}
-                >
-                  <div className="space-y-1.5">
-                    <div className="flex items-center space-x-2">
-                      {m.isNow && (
-                        <span className="text-[10px] bg-rose-alert text-white font-bold px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
-                          Live Now
+            {meetings.length > 0 ? (
+              <div className="space-y-3">
+                {meetings.map((m) => (
+                  <div
+                    key={m.id}
+                    className={`p-4 rounded-xl border transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                      m.isNow
+                        ? 'bg-indigo-accent/10 border-indigo-accent/50 shadow-md shadow-indigo-accent/10'
+                        : 'bg-navy-900/60 border-navy-800 hover:border-navy-700'
+                    }`}
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center space-x-2">
+                        {m.isNow && (
+                          <span className="text-[10px] bg-rose-alert text-white font-bold px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
+                            Live Now
+                          </span>
+                        )}
+                        <h4 className="text-sm font-bold text-white">{m.title}</h4>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                        <span className="flex items-center space-x-1">
+                          <Clock size={12} />
+                          <span>{m.time}</span>
                         </span>
-                      )}
-                      <h4 className="text-sm font-bold text-white">{m.title}</h4>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                      <span className="flex items-center space-x-1">
-                        <Clock size={12} />
-                        <span>{m.time}</span>
-                      </span>
-                      <span>•</span>
-                      <span>{m.duration}</span>
-                      <span>•</span>
-                      <div className="flex -space-x-1.5">
-                        {m.attendees.map((name, i) => (
-                          <div
-                            key={i}
-                            className="w-5 h-5 rounded-full bg-navy-700 text-[9px] font-bold flex items-center justify-center text-slate-200 ring-2 ring-navy-900"
-                            title={name}
-                          >
-                            {name.charAt(0)}
-                          </div>
-                        ))}
+                        <span>•</span>
+                        <span>{m.duration}</span>
                       </div>
                     </div>
-                    <div className="flex gap-1.5 pt-1">
-                      {m.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="text-[10px] bg-navy-800 text-slate-300 px-2 py-0.5 rounded-md font-mono"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
+
+                    <div className="flex items-center space-x-2 sm:self-center">
+                      <button
+                        onClick={() => navigate(`/green-room/${m.id}`)}
+                        className="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-accent hover:bg-indigo-light text-white transition flex items-center space-x-1.5 shadow-md shadow-indigo-accent/30"
+                      >
+                        <Video size={14} />
+                        <span>Join Meeting</span>
+                      </button>
                     </div>
                   </div>
-
-                  <div className="flex items-center space-x-2 sm:self-center">
-                    <button
-                      onClick={() => navigate(`/green-room/${m.id}`)}
-                      className={`px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 shadow-md ${
-                        m.isNow
-                          ? 'bg-indigo-accent hover:bg-indigo-light text-white shadow-indigo-accent/30'
-                          : 'bg-navy-800 hover:bg-navy-700 text-slate-200'
-                      }`}
-                    >
-                      <Video size={14} />
-                      <span>{m.isNow ? 'Join Meeting' : 'Pre-join Check'}</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 text-center border border-dashed border-navy-800 rounded-xl space-y-3 bg-navy-900/30">
+                <Calendar size={32} className="mx-auto text-slate-500" />
+                <div className="text-sm font-semibold text-slate-300">No Scheduled Meetings Today</div>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  Plan ahead by scheduling a video call with collaborative whiteboard agenda.
+                </p>
+                <button
+                  onClick={() => setIsScheduleOpen(true)}
+                  className="mt-2 px-3.5 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-accent hover:bg-cyan-500/30 text-xs font-semibold border border-cyan-500/30 transition inline-flex items-center space-x-1.5"
+                >
+                  <Calendar size={13} />
+                  <span>Schedule a Meeting</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Weekly Productivity Metrics Widget (1 col) */}
@@ -475,31 +417,31 @@ export const DashboardPage: React.FC = () => {
             <div className="space-y-4">
               <div className="bg-navy-900/80 p-4 rounded-xl border border-navy-800 flex items-center justify-between">
                 <div>
-                  <div className="text-2xl font-extrabold text-white">14.5 hrs</div>
-                  <div className="text-xs text-slate-400">Context-Switching Saved</div>
+                  <div className="text-2xl font-extrabold text-white">{realRooms.length}</div>
+                  <div className="text-xs text-slate-400">Persistent MySQL Rooms</div>
                 </div>
                 <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-active flex items-center justify-center font-bold text-sm">
-                  +32%
+                  <Database size={18} />
                 </div>
               </div>
 
               <div className="bg-navy-900/80 p-4 rounded-xl border border-navy-800 flex items-center justify-between">
                 <div>
-                  <div className="text-2xl font-extrabold text-white">28 Boards</div>
-                  <div className="text-xs text-slate-400">Active Spatial Diagrams</div>
+                  <div className="text-2xl font-extrabold text-white">SFU Router</div>
+                  <div className="text-xs text-slate-400">Camera Stream Orchestration</div>
                 </div>
                 <div className="w-10 h-10 rounded-xl bg-indigo-accent/20 text-indigo-light flex items-center justify-center font-bold text-sm">
-                  <Layers size={18} />
+                  <Zap size={18} />
                 </div>
               </div>
 
               <div className="bg-navy-900/80 p-4 rounded-xl border border-navy-800 flex items-center justify-between">
                 <div>
-                  <div className="text-2xl font-extrabold text-white">42 Tasks</div>
-                  <div className="text-xs text-slate-400">Synced to Jira / Linear</div>
+                  <div className="text-2xl font-extrabold text-white">Ultra-low</div>
+                  <div className="text-xs text-slate-400">WebRTC Video & Canvas Latency</div>
                 </div>
                 <div className="w-10 h-10 rounded-xl bg-cyan-accent/20 text-cyan-accent flex items-center justify-center font-bold text-sm">
-                  <CheckCircle2 size={18} />
+                  <Activity size={18} />
                 </div>
               </div>
             </div>
@@ -507,7 +449,7 @@ export const DashboardPage: React.FC = () => {
             <div className="p-3.5 bg-indigo-accent/10 border border-indigo-accent/30 rounded-xl text-xs text-indigo-glow flex items-start space-x-2.5">
               <Sparkles size={16} className="flex-shrink-0 mt-0.5 text-indigo-light" />
               <span>
-                <strong>Nexus AI Assistant:</strong> Summarized 5 meetings this week with 100% action item extraction accuracy.
+                <strong>SFU Media Engine:</strong> Orchestrates up to 50 concurrent participants with single-stream upload.
               </span>
             </div>
           </div>
@@ -585,44 +527,20 @@ export const DashboardPage: React.FC = () => {
                 </div>
               ))
             ) : (
-              recentBoards.map((board) => (
-                <div
-                  key={board.id}
-                  onClick={() => navigate(`/room/${board.id}`)}
-                  className="glass-card hover:border-navy-600 rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 group hover:-translate-y-1"
+              <div className="col-span-full p-8 text-center border border-dashed border-navy-800 rounded-2xl bg-navy-900/30 space-y-3">
+                <Layers size={36} className="mx-auto text-slate-500" />
+                <div className="text-sm font-semibold text-slate-300">No Whiteboard Sessions Yet</div>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  Your spatial whiteboard rooms will appear here once created. Every room is persistently saved in MySQL storage.
+                </p>
+                <button
+                  onClick={handleNewWhiteboard}
+                  className="mt-2 px-4 py-2 rounded-xl bg-indigo-accent hover:bg-indigo-light text-white text-xs font-semibold shadow-md shadow-indigo-accent/30 transition inline-flex items-center space-x-1.5"
                 >
-                  <div className={`h-32 bg-gradient-to-br ${board.thumbnailColor} p-4 flex flex-col justify-between relative border-b border-navy-800`}>
-                    <div className="flex justify-between items-start">
-                      <span className="text-[10px] bg-navy-950/80 text-slate-300 px-2 py-0.5 rounded-full border border-navy-800">
-                        Spatial Vector
-                      </span>
-                      <div className="w-6 h-6 rounded-lg bg-navy-950/60 flex items-center justify-center text-slate-400 group-hover:text-white">
-                        <ExternalLink size={12} />
-                      </div>
-                    </div>
-
-                    {/* Wireframe diagram preview graphic */}
-                    <div className="opacity-30 group-hover:opacity-60 transition flex items-center space-x-3">
-                      <div className="w-12 h-8 rounded border border-white/60" />
-                      <div className="h-[1px] w-6 bg-white/60" />
-                      <div className="w-8 h-8 rounded-full border border-white/60" />
-                    </div>
-                  </div>
-
-                  <div className="p-4 space-y-2">
-                    <h4 className="text-xs font-bold text-white truncate group-hover:text-indigo-light transition">
-                      {board.title}
-                    </h4>
-                    <div className="flex items-center justify-between text-[11px] text-slate-400">
-                      <span>Modified {board.updatedAt}</span>
-                      <span className="flex items-center space-x-1">
-                        <Users size={11} />
-                        <span>{board.collaborators} peers</span>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))
+                  <Palette size={14} />
+                  <span>Create First Whiteboard</span>
+                </button>
+              </div>
             )}
           </div>
         </div>

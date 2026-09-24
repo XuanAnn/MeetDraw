@@ -3,6 +3,7 @@ import {
   ChatMessage,
   WhiteboardEvent,
   PeerInfo,
+  SfuStatsPayload,
 } from '@meetdraw/shared';
 import {
   peerManager,
@@ -19,6 +20,14 @@ export function useWebRTC(
   const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [activePeersCount, setActivePeersCount] = useState(0);
+  const [sfuStats, setSfuStats] = useState<SfuStatsPayload>({
+    activeProducers: 0,
+    activeConsumers: 0,
+    bandwidthSavedPercent: 0,
+    topology: 'SFU',
+    activeSpeakerId: null,
+  });
+  const [activeSpeakerId, setActiveSpeakerId] = useState<string | null>(null);
 
   const onRemoteWhiteboardRef = useRef(onRemoteWhiteboardEvent);
   onRemoteWhiteboardRef.current = onRemoteWhiteboardEvent;
@@ -111,6 +120,14 @@ export function useWebRTC(
       onChatMessage: (peerId, msg) => {
         setChatMessages((prev) => [...prev, msg]);
       },
+
+      onSfuStats: (stats) => {
+        setSfuStats(stats);
+      },
+
+      onActiveSpeaker: (speakerId) => {
+        setActiveSpeakerId(speakerId);
+      },
     });
 
     return () => {
@@ -142,5 +159,7 @@ export function useWebRTC(
     chatMessages,
     activePeersCount,
     sendChatMessage,
+    sfuStats,
+    activeSpeakerId,
   };
 }

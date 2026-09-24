@@ -39,21 +39,8 @@ export const WhiteboardRoomPage: React.FC = () => {
   const [isPollsOpen, setIsPollsOpen] = useState(false);
   const [snapshotSaved, setSnapshotSaved] = useState(false);
 
-  // Live Polls state
-  const [polls, setPolls] = useState<PollData[]>([
-    {
-      id: 'poll-init-1',
-      question: 'Should we adopt WebRTC SFU for >50 participants in Phase 2?',
-      options: [
-        { id: 'opt-1', text: 'Yes, migrate to mediasoup SFU', votes: 3 },
-        { id: 'opt-2', text: 'Keep P2P Mesh for privacy', votes: 1 },
-      ],
-      totalVotes: 4,
-      creatorName: 'Alex',
-      isActive: true,
-      votedUserIds: [],
-    },
-  ]);
+  // Live Polls state (created by users in real-time)
+  const [polls, setPolls] = useState<PollData[]>([]);
 
   // Record user joining room in MySQL
   useEffect(() => {
@@ -114,14 +101,23 @@ export const WhiteboardRoomPage: React.FC = () => {
     userColor: actualColor,
   });
 
-  // 5. WebRTC Mesh (P2P DataChannel & MediaStream)
+  // 5. WebRTC SFU (Selective Forwarding Unit & DataChannel)
   const {
     remotePeers,
     remoteStreams,
     chatMessages,
     activePeersCount,
     sendChatMessage,
+    sfuStats,
+    activeSpeakerId,
   } = useWebRTC(roomId, applyRemoteEvent, localStream);
+
+  // Automatically publish screen share track to SFU when active
+  useEffect(() => {
+    if (screenStream) {
+      peerManager.publishScreenTrack(screenStream);
+    }
+  }, [screenStream]);
 
   // Auto-unlock browser audio autoplay policies on first click or keypress
   useEffect(() => {
@@ -259,6 +255,7 @@ export const WhiteboardRoomPage: React.FC = () => {
         userColor={actualColor}
         activeView={activeView}
         setActiveView={setActiveView}
+        sfuStats={sfuStats}
         onLeaveRoom={handleLeave}
       />
 

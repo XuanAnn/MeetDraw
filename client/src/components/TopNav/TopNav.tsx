@@ -3,11 +3,13 @@ import {
   Copy,
   Check,
   Wifi,
+  Zap,
   PhoneOff,
   Palette,
   Monitor,
   Columns,
 } from 'lucide-react';
+import { SfuStatsPayload } from '@meetdraw/shared';
 
 export type ActiveMeetingView = 'whiteboard' | 'screenshare' | 'split';
 
@@ -20,6 +22,7 @@ interface TopNavProps {
   userColor: string;
   activeView: ActiveMeetingView;
   setActiveView: (view: ActiveMeetingView) => void;
+  sfuStats?: SfuStatsPayload;
   onLeaveRoom: () => void;
 }
 
@@ -32,6 +35,7 @@ export const TopNav: React.FC<TopNavProps> = ({
   userColor,
   activeView,
   setActiveView,
+  sfuStats,
   onLeaveRoom,
 }) => {
   const [copied, setCopied] = useState(false);
@@ -119,11 +123,16 @@ export const TopNav: React.FC<TopNavProps> = ({
 
       {/* Right: Peer Presence & End Call */}
       <div className="flex items-center space-x-3">
-        {/* WebRTC UDP Mesh Badge */}
-        <div className="hidden xl:flex items-center space-x-1.5 bg-navy-900 px-2.5 py-1 rounded-full border border-navy-800 text-[11px]">
-          <Wifi size={12} className={connectedPeersCount > 0 ? 'text-indigo-glow' : 'text-slate-500'} />
-          <span className="text-slate-400">
-            P2P: <span className="text-slate-200">{connectedPeersCount} Peer{connectedPeersCount !== 1 ? 's' : ''} (UDP)</span>
+        {/* WebRTC SFU Router Badge */}
+        <div className="hidden xl:flex items-center space-x-1.5 bg-navy-900 px-2.5 py-1 rounded-full border border-indigo-500/30 text-[11px] shadow-sm">
+          <Zap size={12} className={connectedPeersCount > 0 ? 'text-indigo-glow' : 'text-slate-500'} />
+          <span className="text-slate-300 font-medium">
+            SFU Router:{' '}
+            <span className="text-indigo-glow font-bold">
+              {sfuStats && sfuStats.bandwidthSavedPercent > 0
+                ? `${sfuStats.bandwidthSavedPercent}% upload saved`
+                : `${connectedPeersCount} Peer${connectedPeersCount !== 1 ? 's' : ''}`}
+            </span>
           </span>
         </div>
 

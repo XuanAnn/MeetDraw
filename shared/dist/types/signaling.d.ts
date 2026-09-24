@@ -1,4 +1,4 @@
-export type SignalType = 'JOIN_ROOM' | 'LEAVE_ROOM' | 'ROOM_JOINED' | 'USER_JOINED' | 'USER_LEFT' | 'OFFER' | 'ANSWER' | 'ICE_CANDIDATE' | 'ROOM_USERS' | 'ERROR';
+export type SignalType = 'JOIN_ROOM' | 'LEAVE_ROOM' | 'ROOM_JOINED' | 'USER_JOINED' | 'USER_LEFT' | 'OFFER' | 'ANSWER' | 'ICE_CANDIDATE' | 'ROOM_USERS' | 'ERROR' | 'SFU_PRODUCE' | 'SFU_PRODUCE_ACK' | 'SFU_CONSUME' | 'SFU_CONSUME_ACK' | 'SFU_PRODUCER_ADDED' | 'SFU_PRODUCER_CLOSED' | 'SFU_PAUSE_PRODUCER' | 'SFU_RESUME_PRODUCER' | 'SFU_ACTIVE_SPEAKER' | 'SFU_STATS';
 export interface PeerInfo {
     id: string;
     username: string;
@@ -46,5 +46,54 @@ export interface IceCandidatePayload {
 export interface ErrorPayload {
     message: string;
     code?: string;
+}
+export interface SfuProducerInfo {
+    producerId: string;
+    peerId: string;
+    kind: 'audio' | 'video';
+    mediaType: 'camera' | 'screen';
+    paused: boolean;
+    username: string;
+}
+export interface SfuProducePayload {
+    kind: 'audio' | 'video';
+    mediaType: 'camera' | 'screen';
+}
+export interface SfuProduceAckPayload {
+    producerId: string;
+    kind: 'audio' | 'video';
+    mediaType: 'camera' | 'screen';
+}
+export interface SfuConsumePayload {
+    producerId: string;
+    peerId: string;
+}
+export interface SfuConsumeAckPayload {
+    consumerId: string;
+    producerId: string;
+    kind: 'audio' | 'video';
+}
+export interface SfuProducerAddedPayload {
+    producer: SfuProducerInfo;
+}
+export interface SfuProducerClosedPayload {
+    producerId: string;
+    peerId: string;
+    kind: 'audio' | 'video';
+}
+export interface SfuPauseProducerPayload {
+    producerId: string;
+    paused: boolean;
+}
+export interface SfuActiveSpeakerPayload {
+    peerId: string;
+    volume?: number;
+}
+export interface SfuStatsPayload {
+    activeProducers: number;
+    activeConsumers: number;
+    bandwidthSavedPercent: number;
+    topology: 'SFU';
+    activeSpeakerId: string | null;
 }
 //# sourceMappingURL=signaling.d.ts.map

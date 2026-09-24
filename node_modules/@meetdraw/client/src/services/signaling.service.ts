@@ -8,6 +8,12 @@ import {
   AnswerPayload,
   IceCandidatePayload,
   ErrorPayload,
+  SfuProducePayload,
+  SfuConsumePayload,
+  SfuPauseProducerPayload,
+  SfuActiveSpeakerPayload,
+  SfuProducerInfo,
+  SfuStatsPayload,
 } from '@meetdraw/shared';
 import { createLogger } from '../utils/logger';
 
@@ -183,6 +189,46 @@ class SignalingService {
       senderId: this.selfPeerId!,
       targetId,
       payload: { candidate },
+    });
+  }
+
+  sendSfuProduce(roomId: string, kind: 'audio' | 'video', mediaType: 'camera' | 'screen' = 'camera') {
+    if (!this.selfPeerId) return;
+    this.send<SfuProducePayload>({
+      type: 'SFU_PRODUCE',
+      roomId,
+      senderId: this.selfPeerId,
+      payload: { kind, mediaType },
+    });
+  }
+
+  sendSfuConsume(roomId: string, producerId: string, targetPeerId: string) {
+    if (!this.selfPeerId) return;
+    this.send<SfuConsumePayload>({
+      type: 'SFU_CONSUME',
+      roomId,
+      senderId: this.selfPeerId,
+      payload: { producerId, peerId: targetPeerId },
+    });
+  }
+
+  sendSfuPauseProducer(roomId: string, producerId: string, paused: boolean) {
+    if (!this.selfPeerId) return;
+    this.send<SfuPauseProducerPayload>({
+      type: 'SFU_PAUSE_PRODUCER',
+      roomId,
+      senderId: this.selfPeerId,
+      payload: { producerId, paused },
+    });
+  }
+
+  sendSfuActiveSpeaker(roomId: string, volume?: number) {
+    if (!this.selfPeerId) return;
+    this.send<SfuActiveSpeakerPayload>({
+      type: 'SFU_ACTIVE_SPEAKER',
+      roomId,
+      senderId: this.selfPeerId,
+      payload: { peerId: this.selfPeerId, volume },
     });
   }
 
