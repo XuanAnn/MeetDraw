@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BarChart3, Plus, CheckCircle2, Vote, X } from 'lucide-react';
-import { PollData, PollOption } from '@meetdraw/shared';
+import { PollData } from '@meetdraw/shared';
 
 interface LivePollsPanelProps {
   polls: PollData[];
@@ -39,30 +39,30 @@ export const LivePollsPanel: React.FC<LivePollsPanelProps> = ({
   };
 
   return (
-    <div className="bg-navy-900 border-l border-navy-800 flex flex-col w-72 sm:w-80 h-full z-20 select-none">
+    <div className="bg-white border-l border-slate-200 flex flex-col w-72 sm:w-80 h-full z-20 select-none shadow-sm font-sans">
       {/* Header */}
-      <div className="h-12 border-b border-navy-800 px-3 flex items-center justify-between">
+      <div className="h-12 border-b border-slate-200 px-3.5 flex items-center justify-between bg-slate-50/70">
         <div className="flex items-center space-x-2">
-          <BarChart3 size={16} className="text-indigo-glow" />
-          <span className="text-xs font-semibold text-slate-200 uppercase tracking-wider">
+          <BarChart3 size={16} className="text-indigo-600" />
+          <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
             Khảo sát ({polls.length})
           </span>
         </div>
         <button
           onClick={onClose}
-          className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-navy-800 transition"
+          className="p-1 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-200/60 transition"
         >
           <X size={16} />
         </button>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-4">
+      <div className="flex-1 overflow-y-auto p-3 space-y-3.5 bg-white">
         {/* Create Poll Button */}
         {!isCreating && (
           <button
             onClick={() => setIsCreating(true)}
-            className="w-full bg-navy-850 hover:bg-navy-800 border border-navy-700 text-indigo-light text-xs font-semibold py-2 rounded-xl flex items-center justify-center space-x-1.5 transition"
+            className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-indigo-700 text-xs font-bold py-2 rounded-xl flex items-center justify-center space-x-1.5 transition shadow-sm"
           >
             <Plus size={14} />
             <span>Tạo cuộc bình chọn</span>
@@ -71,8 +71,8 @@ export const LivePollsPanel: React.FC<LivePollsPanelProps> = ({
 
         {/* Create Poll Form */}
         {isCreating && (
-          <form onSubmit={handleCreate} className="bg-navy-950 p-3.5 rounded-xl border border-navy-700 space-y-2.5">
-            <div className="text-xs font-bold text-white">Tạo bình chọn mới</div>
+          <form onSubmit={handleCreate} className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5 shadow-sm">
+            <div className="text-xs font-bold text-slate-900">Tạo bình chọn mới</div>
             <div>
               <input
                 type="text"
@@ -80,7 +80,7 @@ export const LivePollsPanel: React.FC<LivePollsPanelProps> = ({
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 placeholder="Câu hỏi bình chọn..."
-                className="w-full bg-navy-900 border border-navy-700 text-slate-100 text-xs px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-indigo-light"
+                className="w-full bg-white border border-slate-300 text-slate-900 text-xs px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-indigo-600 transition"
               />
             </div>
             <div className="space-y-1.5">
@@ -90,7 +90,7 @@ export const LivePollsPanel: React.FC<LivePollsPanelProps> = ({
                 value={option1}
                 onChange={(e) => setOption1(e.target.value)}
                 placeholder="Lựa chọn 1"
-                className="w-full bg-navy-900 border border-navy-700 text-slate-100 text-xs px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-indigo-light"
+                className="w-full bg-white border border-slate-300 text-slate-900 text-xs px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-indigo-600 transition"
               />
               <input
                 type="text"
@@ -98,27 +98,27 @@ export const LivePollsPanel: React.FC<LivePollsPanelProps> = ({
                 value={option2}
                 onChange={(e) => setOption2(e.target.value)}
                 placeholder="Lựa chọn 2"
-                className="w-full bg-navy-900 border border-navy-700 text-slate-100 text-xs px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-indigo-light"
+                className="w-full bg-white border border-slate-300 text-slate-900 text-xs px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-indigo-600 transition"
               />
               <input
                 type="text"
                 value={option3}
                 onChange={(e) => setOption3(e.target.value)}
                 placeholder="Lựa chọn 3 (không bắt buộc)"
-                className="w-full bg-navy-900 border border-navy-700 text-slate-100 text-xs px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-indigo-light"
+                className="w-full bg-white border border-slate-300 text-slate-900 text-xs px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-indigo-600 transition"
               />
             </div>
             <div className="flex justify-end space-x-2 pt-1">
               <button
                 type="button"
                 onClick={() => setIsCreating(false)}
-                className="text-[11px] text-slate-400 hover:text-white px-2 py-1"
+                className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 px-2 py-1"
               >
                 Hủy
               </button>
               <button
                 type="submit"
-                className="bg-indigo-accent hover:bg-indigo-light text-white text-[11px] font-semibold px-3 py-1 rounded-lg transition"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold px-3 py-1 rounded-lg transition shadow-sm"
               >
                 Bắt đầu bình chọn
               </button>
@@ -128,9 +128,9 @@ export const LivePollsPanel: React.FC<LivePollsPanelProps> = ({
 
         {/* Poll List */}
         {polls.length === 0 && !isCreating ? (
-          <div className="text-center py-10 px-2 text-xs text-slate-500">
-            <Vote size={28} className="mx-auto mb-2 opacity-40 text-indigo-glow" />
-            <p>Chưa có cuộc bình chọn nào.</p>
+          <div className="text-center py-10 px-2 text-xs text-slate-400">
+            <Vote size={28} className="mx-auto mb-2 opacity-30 text-indigo-600" />
+            <p className="font-semibold text-slate-600">Chưa có cuộc bình chọn nào.</p>
             <p className="mt-1 text-[11px]">Tạo bình chọn để lấy ý kiến tức thì trong phòng họp.</p>
           </div>
         ) : (
@@ -139,12 +139,12 @@ export const LivePollsPanel: React.FC<LivePollsPanelProps> = ({
             return (
               <div
                 key={poll.id}
-                className="glass-card p-3.5 rounded-xl border border-navy-800 space-y-2.5"
+                className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2.5"
               >
-                <div className="flex justify-between items-start">
-                  <h4 className="text-xs font-bold text-white leading-snug">{poll.question}</h4>
-                  <span className="text-[10px] bg-indigo-accent/20 text-indigo-glow px-1.5 py-0.5 rounded font-mono">
-                    {poll.totalVotes} lượt bình chọn
+                <div className="flex justify-between items-start gap-2">
+                  <h4 className="text-xs font-bold text-slate-900 leading-snug">{poll.question}</h4>
+                  <span className="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200/60 px-1.5 py-0.5 rounded font-mono font-bold whitespace-nowrap">
+                    {poll.totalVotes} lượt
                   </span>
                 </div>
 
@@ -159,30 +159,30 @@ export const LivePollsPanel: React.FC<LivePollsPanelProps> = ({
                         onClick={() => onVote(poll.id, opt.id)}
                         className={`w-full text-left p-2 rounded-lg border transition relative overflow-hidden group ${
                           hasVoted
-                            ? 'bg-navy-950/80 border-navy-800 cursor-default'
-                            : 'bg-navy-950 border-navy-800 hover:border-indigo-light cursor-pointer'
+                            ? 'bg-slate-50 border-slate-200 cursor-default'
+                            : 'bg-white border-slate-200 hover:border-indigo-400 cursor-pointer'
                         }`}
                       >
                         {/* Background Percentage Bar */}
                         <div
-                          className="absolute top-0 bottom-0 left-0 bg-indigo-accent/25 transition-all duration-300"
+                          className="absolute top-0 bottom-0 left-0 bg-indigo-100/60 transition-all duration-300"
                           style={{ width: `${percentage}%` }}
                         />
 
                         <div className="relative z-10 flex justify-between items-center text-xs">
-                          <span className="font-medium text-slate-200">{opt.text}</span>
-                          <span className="text-[11px] font-bold text-indigo-glow">{percentage}%</span>
+                          <span className="font-semibold text-slate-800">{opt.text}</span>
+                          <span className="text-[11px] font-bold text-indigo-700">{percentage}%</span>
                         </div>
                       </button>
                     );
                   })}
                 </div>
 
-                <div className="text-[10px] text-slate-400 flex items-center justify-between pt-1">
+                <div className="text-[10px] text-slate-400 flex items-center justify-between pt-1 border-t border-slate-100">
                   <span>Tạo bởi {poll.creatorName}</span>
                   {hasVoted && (
-                    <span className="text-emerald-active font-semibold flex items-center space-x-0.5">
-                      <CheckCircle2 size={10} />
+                    <span className="text-emerald-700 font-bold flex items-center space-x-0.5">
+                      <CheckCircle2 size={11} />
                       <span>Đã bình chọn</span>
                     </span>
                   )}

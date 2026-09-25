@@ -31,10 +31,10 @@ export const VideoPanel: React.FC<VideoPanelProps> = ({
   const peerList = Array.from(remotePeers.values());
 
   return (
-    <div className="bg-gray-900 border-l border-gray-800 flex flex-col transition-all duration-300 w-72 sm:w-80 h-full z-10 select-none">
+    <div className="bg-white border-l border-slate-200 shadow-sm flex flex-col transition-all duration-300 w-72 sm:w-80 h-full z-10 select-none">
       {/* Header */}
-      <div className="h-12 border-b border-gray-800 px-3 flex items-center justify-between">
-        <span className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
+      <div className="h-12 border-b border-slate-200 px-3 flex items-center justify-between bg-white">
+        <span className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
           Video & Audio ({peerList.length + 1})
         </span>
 
@@ -44,8 +44,8 @@ export const VideoPanel: React.FC<VideoPanelProps> = ({
             onClick={toggleAudio}
             className={`p-1.5 rounded-lg transition ${
               isAudioMuted
-                ? 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30'
-                : 'bg-gray-800 text-gray-200 hover:bg-gray-700'
+                ? 'bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
             title={isAudioMuted ? 'Bật Micro' : 'Tắt Micro'}
           >
@@ -56,8 +56,8 @@ export const VideoPanel: React.FC<VideoPanelProps> = ({
             onClick={toggleVideo}
             className={`p-1.5 rounded-lg transition ${
               isVideoMuted
-                ? 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30'
-                : 'bg-gray-800 text-gray-200 hover:bg-gray-700'
+                ? 'bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
             title={isVideoMuted ? 'Bật Camera' : 'Tắt Camera'}
           >
@@ -66,7 +66,7 @@ export const VideoPanel: React.FC<VideoPanelProps> = ({
 
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-1.5 text-gray-400 hover:text-gray-200 rounded-lg hover:bg-gray-800 transition"
+            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition"
           >
             {isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
           </button>
@@ -75,7 +75,7 @@ export const VideoPanel: React.FC<VideoPanelProps> = ({
 
       {/* Video Streams Container */}
       {!isCollapsed && (
-        <div className="flex-1 overflow-y-auto p-3 space-y-3">
+        <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-slate-50/50">
           {/* Local User Tile */}
           <VideoTile
             stream={localStream}
@@ -103,7 +103,7 @@ export const VideoPanel: React.FC<VideoPanelProps> = ({
           })}
 
           {peerList.length === 0 && (
-            <div className="text-center py-6 px-2 text-xs text-gray-500">
+            <div className="text-center py-6 px-2 text-xs text-slate-400">
               Chưa có người tham gia nào khác trong phòng. Hãy chia sẻ mã hoặc liên kết phòng để mời mọi người!
             </div>
           )}

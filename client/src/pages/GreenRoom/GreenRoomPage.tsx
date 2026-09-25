@@ -154,29 +154,29 @@ export const GreenRoomPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-navy-950 text-slate-100 flex flex-col justify-between font-sans">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-between font-sans">
       {/* Header */}
-      <header className="h-16 px-6 glass-panel border-b border-navy-800 flex items-center justify-between">
+      <header className="h-16 px-6 bg-white border-b border-slate-200 flex items-center justify-between shadow-sm">
         <div className="flex items-center space-x-3">
           <Link
             to="/"
-            className="flex items-center space-x-1.5 text-xs text-slate-400 hover:text-white transition px-2 py-1 rounded-lg hover:bg-navy-850"
+            className="flex items-center space-x-1.5 text-xs text-slate-500 hover:text-slate-900 transition px-2 py-1 rounded-lg hover:bg-slate-100"
           >
             <ArrowLeft size={14} />
             <span>Dashboard</span>
           </Link>
-          <div className="h-4 w-[1px] bg-navy-800" />
+          <div className="h-4 w-[1px] bg-slate-200" />
           <div className="flex items-center space-x-2">
-            <span className="font-bold text-sm text-white">Green Room</span>
-            <span className="text-[10px] bg-indigo-accent/20 text-indigo-glow px-2 py-0.5 rounded-full font-semibold">
+            <span className="font-bold text-sm text-slate-900">Green Room</span>
+            <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-semibold border border-indigo-200">
               Pre-Call Check
             </span>
           </div>
         </div>
 
-        <div className="text-xs text-slate-400 flex items-center space-x-2">
+        <div className="text-xs text-slate-500 flex items-center space-x-2">
           <span>Room Code:</span>
-          <span className="font-mono bg-navy-900 px-2 py-0.5 rounded-md text-slate-200 border border-navy-800">
+          <span className="font-mono bg-slate-100 px-2 py-0.5 rounded-md text-slate-800 border border-slate-200">
             {roomId}
           </span>
         </div>
@@ -186,7 +186,7 @@ export const GreenRoomPage: React.FC = () => {
       <main className="max-w-5xl w-full mx-auto p-6 flex-1 flex flex-col lg:flex-row items-center justify-center gap-8">
         {/* Left: Camera Preview Box */}
         <div className="w-full lg:w-3/5 space-y-4">
-          <div className="relative aspect-video bg-navy-900 rounded-2xl overflow-hidden border border-navy-800 shadow-2xl flex items-center justify-center group">
+          <div className="relative aspect-video bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 shadow-md flex items-center justify-center group">
             {/* Video feed */}
             <video
               ref={videoRef}
@@ -210,7 +210,7 @@ export const GreenRoomPage: React.FC = () => {
             {isVideoMuted && (
               <div className="flex flex-col items-center justify-center space-y-3">
                 <div
-                  className="w-20 h-20 rounded-full flex items-center justify-center font-extrabold text-2xl text-white shadow-xl ring-4 ring-navy-800"
+                  className="w-20 h-20 rounded-full flex items-center justify-center font-extrabold text-2xl text-white shadow-xl ring-4 ring-slate-800"
                   style={{ backgroundColor: userColor }}
                 >
                   {displayName.charAt(0).toUpperCase()}
@@ -220,13 +220,13 @@ export const GreenRoomPage: React.FC = () => {
             )}
 
             {/* Bottom floating media controls */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center space-x-3 bg-navy-950/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-navy-700/80 shadow-xl">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center space-x-3 bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-700/60 shadow-xl">
               <button
                 onClick={handleToggleAudio}
                 className={`p-3 rounded-xl transition ${
                   isAudioMuted
-                    ? 'bg-rose-alert text-white shadow-lg shadow-rose-alert/30'
-                    : 'bg-navy-800 text-slate-200 hover:bg-navy-700'
+                    ? 'bg-rose-500 text-white shadow-md'
+                    : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
                 }`}
                 title={isAudioMuted ? 'Bật Micro' : 'Tắt Micro'}
               >
@@ -237,8 +237,8 @@ export const GreenRoomPage: React.FC = () => {
                 onClick={handleToggleVideo}
                 className={`p-3 rounded-xl transition ${
                   isVideoMuted
-                    ? 'bg-rose-alert text-white shadow-lg shadow-rose-alert/30'
-                    : 'bg-navy-800 text-slate-200 hover:bg-navy-700'
+                    ? 'bg-rose-500 text-white shadow-md'
+                    : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
                 }`}
                 title={isVideoMuted ? 'Bật Camera' : 'Tắt Camera'}
               >
@@ -247,8 +247,8 @@ export const GreenRoomPage: React.FC = () => {
             </div>
 
             {/* Virtual Background Badge */}
-            <div className="absolute top-4 left-4 bg-navy-950/80 backdrop-blur-sm px-2.5 py-1 rounded-lg text-[11px] text-slate-300 border border-navy-800 flex items-center space-x-1.5">
-              <Sparkles size={12} className="text-indigo-glow" />
+            <div className="absolute top-4 left-4 bg-slate-900/80 backdrop-blur-sm px-2.5 py-1 rounded-lg text-[11px] text-slate-200 border border-slate-700/50 flex items-center space-x-1.5 shadow-sm">
+              <Sparkles size={12} className="text-indigo-400" />
               <span>
                 {virtualBg === 'none'
                   ? 'Nền gốc'
@@ -262,18 +262,18 @@ export const GreenRoomPage: React.FC = () => {
           </div>
 
           {/* Live Audio Meter (Web Audio API) */}
-          <div className="glass-card p-3.5 rounded-xl flex items-center space-x-3 border border-navy-800">
-            <Mic size={16} className={audioLevel > 10 ? 'text-emerald-active' : 'text-slate-500'} />
+          <div className="bg-white p-3.5 rounded-xl flex items-center space-x-3 border border-slate-200 shadow-sm">
+            <Mic size={16} className={audioLevel > 10 ? 'text-emerald-600' : 'text-slate-400'} />
             <div className="flex-1">
-              <div className="flex justify-between text-[11px] text-slate-400 mb-1">
+              <div className="flex justify-between text-[11px] text-slate-500 mb-1">
                 <span>Mức tín hiệu âm thanh Micro</span>
-                <span className={audioLevel > 10 ? 'text-emerald-active font-semibold' : 'text-slate-500'}>
+                <span className={audioLevel > 10 ? 'text-emerald-600 font-semibold' : 'text-slate-400'}>
                   {isAudioMuted ? 'Đã tắt tiếng' : `${audioLevel}%`}
                 </span>
               </div>
-              <div className="h-2 w-full bg-navy-900 rounded-full overflow-hidden flex space-x-0.5 p-0.5">
+              <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden flex space-x-0.5 p-0.5">
                 <div
-                  className="h-full rounded-full transition-all duration-75 bg-gradient-to-r from-emerald-active via-cyan-accent to-rose-alert"
+                  className="h-full rounded-full transition-all duration-75 bg-gradient-to-r from-emerald-500 via-sky-500 to-rose-500"
                   style={{ width: `${audioLevel}%` }}
                 />
               </div>
@@ -282,29 +282,29 @@ export const GreenRoomPage: React.FC = () => {
         </div>
 
         {/* Right: Peripherals & Join Control Card */}
-        <div className="w-full lg:w-2/5 glass-panel p-6 rounded-2xl border border-navy-800 space-y-6">
+        <div className="w-full lg:w-2/5 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
           <div>
-            <h2 className="text-lg font-bold text-white mb-1">Sẵn sàng tham gia?</h2>
-            <p className="text-xs text-slate-400">
+            <h2 className="text-lg font-bold text-slate-900 mb-1">Sẵn sàng tham gia?</h2>
+            <p className="text-xs text-slate-500">
               Kiểm tra thiết bị của bạn trước khi vào phòng họp.
             </p>
           </div>
 
           {/* Authenticated User Identity */}
-          <div className="p-3 bg-navy-900/90 rounded-xl border border-navy-700/80 flex items-center justify-between">
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
             <div className="flex items-center space-x-2.5">
               <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-white text-sm shadow-md"
+                className="w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-white text-sm shadow-sm"
                 style={{ backgroundColor: userColor }}
               >
                 {displayName.charAt(0).toUpperCase()}
               </div>
               <div>
-                <div className="text-xs font-bold text-white">{displayName}</div>
-                <div className="text-[11px] text-slate-400">{currentUser?.email}</div>
+                <div className="text-xs font-bold text-slate-900">{displayName}</div>
+                <div className="text-[11px] text-slate-500">{currentUser?.email}</div>
               </div>
             </div>
-            <span className="text-[10px] bg-emerald-500/20 text-emerald-active px-2 py-0.5 rounded-full font-semibold border border-emerald-500/30 flex items-center space-x-1">
+            <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-semibold border border-emerald-200 flex items-center space-x-1">
               <Check size={10} />
               <span>Đã xác thực</span>
             </span>
@@ -313,11 +313,11 @@ export const GreenRoomPage: React.FC = () => {
           <div className="space-y-3">
             {/* Peripheral Dropdowns */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Nguồn Microphone</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Nguồn Microphone</label>
               <select
                 value={selectedMic}
                 onChange={(e) => setSelectedMic(e.target.value)}
-                className="w-full bg-navy-900 border border-navy-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-light"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-indigo-600 focus:bg-white"
               >
                 {audioInputDevices.length > 0 ? (
                   audioInputDevices.map((d) => (
@@ -332,11 +332,11 @@ export const GreenRoomPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Nguồn Camera</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Nguồn Camera</label>
               <select
                 value={selectedCam}
                 onChange={(e) => setSelectedCam(e.target.value)}
-                className="w-full bg-navy-900 border border-navy-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-light"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-indigo-600 focus:bg-white"
               >
                 {videoInputDevices.length > 0 ? (
                   videoInputDevices.map((d) => (
@@ -353,7 +353,7 @@ export const GreenRoomPage: React.FC = () => {
 
           {/* Virtual Background Selector */}
           <div className="space-y-2">
-            <label className="block text-xs font-semibold text-slate-300">Hiệu ứng nền camera</label>
+            <label className="block text-xs font-semibold text-slate-700">Hiệu ứng nền camera</label>
             <div className="grid grid-cols-4 gap-2">
               {[
                 { id: 'none', label: 'Không' },
@@ -366,8 +366,8 @@ export const GreenRoomPage: React.FC = () => {
                   onClick={() => setVirtualBg(bg.id as any)}
                   className={`text-[11px] py-1.5 px-2 rounded-xl border transition ${
                     virtualBg === bg.id
-                      ? 'bg-indigo-accent text-white border-indigo-accent font-bold'
-                      : 'bg-navy-900 text-slate-400 border-navy-700 hover:text-white'
+                      ? 'bg-indigo-600 text-white border-indigo-600 font-bold shadow-sm'
+                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
                   {bg.label}
@@ -377,18 +377,18 @@ export const GreenRoomPage: React.FC = () => {
           </div>
 
           {/* AI Noise Suppression */}
-          <div className="flex items-center justify-between p-3 bg-navy-900/60 rounded-xl border border-navy-800">
+          <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
             <div className="flex items-center space-x-2">
-              <Shield size={16} className="text-indigo-glow" />
+              <Shield size={16} className="text-indigo-600" />
               <div>
-                <div className="text-xs font-semibold text-slate-200">Khử tiếng ồn & tiếng vang</div>
-                <div className="text-[10px] text-slate-400">Lọc tạp âm và tiếng vang môi trường</div>
+                <div className="text-xs font-semibold text-slate-800">Khử tiếng ồn & tiếng vang</div>
+                <div className="text-[10px] text-slate-500">Lọc tạp âm và tiếng vang môi trường</div>
               </div>
             </div>
             <button
               onClick={() => setNoiseSuppression(!noiseSuppression)}
               className={`w-10 h-5 rounded-full p-0.5 transition ${
-                noiseSuppression ? 'bg-indigo-accent' : 'bg-navy-700'
+                noiseSuppression ? 'bg-indigo-600' : 'bg-slate-300'
               }`}
             >
               <div
@@ -402,7 +402,7 @@ export const GreenRoomPage: React.FC = () => {
           {/* Action Join Button */}
           <button
             onClick={handleJoinRoom}
-            className="w-full bg-indigo-accent hover:bg-indigo-light text-white font-bold text-sm py-3.5 rounded-xl transition shadow-xl shadow-indigo-accent/30 flex items-center justify-center space-x-2"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm py-3.5 rounded-xl transition shadow-md shadow-indigo-600/20 flex items-center justify-center space-x-2"
           >
             <span>Vào phòng họp</span>
             <ArrowRight size={16} />
@@ -411,7 +411,7 @@ export const GreenRoomPage: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="py-4 text-center text-xs text-slate-500 border-t border-navy-900">
+      <footer className="py-4 text-center text-xs text-slate-400 border-t border-slate-200">
         MeetDraw • Không gian họp trực tuyến & Bảng vẽ cộng tác
       </footer>
     </div>

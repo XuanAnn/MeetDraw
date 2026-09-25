@@ -15,7 +15,6 @@ import {
   Trash2,
   ZoomIn,
   ZoomOut,
-  Maximize2,
 } from 'lucide-react';
 import { ToolType } from '@meetdraw/shared';
 
@@ -41,14 +40,14 @@ interface ToolbarProps {
 }
 
 const PRESET_COLORS = [
-  '#f87171', // red
-  '#fb923c', // orange
-  '#facc15', // yellow
-  '#4ade80', // green
-  '#06b6d4', // cyan
-  '#6366f1', // indigo
-  '#c084fc', // purple
-  '#ffffff', // white
+  '#0f172a', // dark ink / slate-900
+  '#dc2626', // red
+  '#ea580c', // orange
+  '#16a34a', // green
+  '#0284c7', // sky
+  '#4f46e5', // indigo
+  '#9333ea', // purple
+  '#64748b', // slate
 ];
 
 const STROKE_WIDTHS = [2, 4, 8, 14];
@@ -89,9 +88,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   ];
 
   return (
-    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center bg-navy-900/90 backdrop-blur-xl border border-navy-700/80 p-1.5 rounded-2xl shadow-2xl space-x-1.5 max-w-[95vw] overflow-x-auto">
+    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center bg-white/95 backdrop-blur-xl border border-slate-200/90 p-1.5 rounded-2xl shadow-xl shadow-slate-200/50 space-x-1.5 max-w-[95vw] overflow-x-auto select-none">
       {/* Drawing Tools */}
-      <div className="flex items-center space-x-1 pr-2 border-r border-navy-800">
+      <div className="flex items-center space-x-1 pr-2 border-r border-slate-200">
         {tools.map((tool) => {
           const isActive = activeTool === tool.id;
           return (
@@ -100,13 +99,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               onClick={() => setActiveTool(tool.id)}
               className={`p-2 rounded-xl transition flex items-center justify-center relative group ${
                 isActive
-                  ? 'bg-indigo-accent text-white shadow-md shadow-indigo-accent/30'
-                  : 'text-slate-400 hover:text-white hover:bg-navy-800'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
               }`}
               title={tool.label}
             >
               {tool.icon}
-              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-navy-950 text-[11px] text-slate-200 px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition whitespace-nowrap border border-navy-800 z-30">
+              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-[11px] text-white font-medium px-2 py-0.5 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition whitespace-nowrap shadow-md z-30">
                 {tool.label}
               </span>
             </button>
@@ -115,18 +114,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       </div>
 
       {/* Color & Stroke Options */}
-      <div className="flex items-center space-x-1.5 px-2 border-r border-navy-800 relative">
+      <div className="flex items-center space-x-1.5 px-2 border-r border-slate-200 relative">
         <div className="relative">
           <button
             onClick={() => setShowColorPicker(!showColorPicker)}
-            className="w-7 h-7 rounded-xl border-2 border-navy-700 flex items-center justify-center transition hover:scale-105"
+            className="w-7 h-7 rounded-xl border-2 border-slate-300 flex items-center justify-center transition hover:scale-105 shadow-sm"
             style={{ backgroundColor: strokeColor }}
             title="Chọn màu sắc"
           />
 
           {showColorPicker && (
-            <div className="absolute top-10 left-0 bg-navy-900 border border-navy-700 p-2.5 rounded-xl shadow-2xl flex flex-col space-y-2 z-30">
-              <div className="text-[10px] font-semibold text-slate-400">Bảng màu</div>
+            <div className="absolute top-10 left-0 bg-white border border-slate-200 p-3 rounded-2xl shadow-2xl flex flex-col space-y-2.5 z-30 w-44">
+              <div className="text-[11px] font-bold text-slate-700">Màu nét vẽ</div>
               <div className="grid grid-cols-4 gap-1.5">
                 {PRESET_COLORS.map((c) => (
                   <button
@@ -135,28 +134,28 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                       setStrokeColor(c);
                       setShowColorPicker(false);
                     }}
-                    className={`w-6 h-6 rounded-lg transition hover:scale-110 ${
-                      strokeColor === c ? 'ring-2 ring-indigo-light' : ''
+                    className={`w-7 h-7 rounded-lg transition hover:scale-110 border border-slate-200 ${
+                      strokeColor === c ? 'ring-2 ring-indigo-600 ring-offset-1' : ''
                     }`}
                     style={{ backgroundColor: c }}
                   />
                 ))}
               </div>
 
-              <div className="text-[10px] font-semibold text-slate-400 pt-1">Đổ màu</div>
-              <div className="flex space-x-1">
+              <div className="text-[11px] font-bold text-slate-700 pt-1 border-t border-slate-100">Đổ màu</div>
+              <div className="flex space-x-1.5">
                 <button
                   onClick={() => setFillColor('transparent')}
-                  className={`text-[10px] px-2 py-1 rounded flex-1 ${
-                    fillColor === 'transparent' ? 'bg-indigo-accent text-white' : 'bg-navy-800 text-slate-400'
+                  className={`text-[10px] font-semibold px-2 py-1 rounded-lg flex-1 transition border ${
+                    fillColor === 'transparent' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
                   }`}
                 >
                   Không
                 </button>
                 <button
-                  onClick={() => setFillColor(strokeColor + '33')}
-                  className={`text-[10px] px-2 py-1 rounded flex-1 ${
-                    fillColor !== 'transparent' ? 'bg-indigo-accent text-white' : 'bg-navy-800 text-slate-400'
+                  onClick={() => setFillColor(strokeColor + '25')}
+                  className={`text-[10px] font-semibold px-2 py-1 rounded-lg flex-1 transition border ${
+                    fillColor !== 'transparent' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
                   }`}
                 >
                   Mờ
@@ -167,13 +166,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         </div>
 
         {/* Stroke Width Selector */}
-        <div className="flex items-center space-x-1 bg-navy-850 p-1 rounded-xl">
+        <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl border border-slate-200/60">
           {STROKE_WIDTHS.map((width) => (
             <button
               key={width}
               onClick={() => setStrokeWidth(width)}
               className={`w-5 h-5 flex items-center justify-center rounded-lg transition ${
-                strokeWidth === width ? 'bg-indigo-accent text-white font-bold' : 'text-slate-400 hover:text-white'
+                strokeWidth === width ? 'bg-indigo-600 text-white font-bold shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <div
@@ -186,11 +185,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       </div>
 
       {/* History (Undo / Redo / Delete / Clear) */}
-      <div className="flex items-center space-x-1 pr-2 border-r border-navy-800">
+      <div className="flex items-center space-x-1 pr-2 border-r border-slate-200">
         <button
           onClick={undo}
           disabled={!canUndo}
-          className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-navy-800 disabled:opacity-30 transition"
+          className="p-1.5 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-30 transition"
           title="Hoàn tác (Ctrl+Z)"
         >
           <Undo2 size={16} />
@@ -198,21 +197,21 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <button
           onClick={redo}
           disabled={!canRedo}
-          className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-navy-800 disabled:opacity-30 transition"
+          className="p-1.5 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-30 transition"
           title="Làm lại (Ctrl+Y)"
         >
           <Redo2 size={16} />
         </button>
         <button
           onClick={deleteSelected}
-          className="p-1.5 rounded-xl text-slate-400 hover:text-rose-alert hover:bg-navy-800 transition"
+          className="p-1.5 rounded-xl text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition"
           title="Xóa đối tượng đã chọn"
         >
           <Trash2 size={16} />
         </button>
         <button
           onClick={clearCanvas}
-          className="text-[11px] px-2 py-1 rounded-xl text-slate-400 hover:text-rose-alert hover:bg-navy-800 transition font-medium"
+          className="text-[11px] px-2 py-1 rounded-xl text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition font-medium"
           title="Xóa toàn bộ bản vẽ"
         >
           Xóa hết
@@ -224,21 +223,21 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <div className="flex items-center space-x-1 pl-1">
           <button
             onClick={zoomOut}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-navy-800 transition"
+            className="p-1.5 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition"
             title="Thu nhỏ"
           >
             <ZoomOut size={15} />
           </button>
           <button
             onClick={resetZoom}
-            className="text-[10px] font-mono font-bold text-slate-300 px-1.5 py-0.5 rounded bg-navy-850 hover:bg-navy-800 transition"
+            className="text-[11px] font-mono font-bold text-slate-700 px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 transition"
             title="Đặt lại mức thu phóng (100%)"
           >
             {zoomLevel}%
           </button>
           <button
             onClick={zoomIn}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-navy-800 transition"
+            className="p-1.5 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition"
             title="Phóng to"
           >
             <ZoomIn size={15} />

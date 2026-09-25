@@ -294,7 +294,7 @@ export const WhiteboardRoomPage: React.FC = () => {
   };
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-navy-950 overflow-hidden select-none font-sans">
+    <div className="h-screen w-screen flex flex-col bg-slate-100 overflow-hidden select-none font-sans">
       {/* Top Navigation with View Switcher [W] / [S] */}
       <TopNav
         roomId={roomId}
@@ -328,7 +328,7 @@ export const WhiteboardRoomPage: React.FC = () => {
               activeView === 'whiteboard'
                 ? 'w-full'
                 : activeView === 'split'
-                ? 'w-1/2 border-r border-navy-800'
+                ? 'w-1/2 border-r border-slate-200'
                 : 'hidden'
             }`}
           >
@@ -360,7 +360,7 @@ export const WhiteboardRoomPage: React.FC = () => {
 
           {/* VIEW 2: SCREEN SHARE & DISCUSSION MODE (Visible in 'screenshare' and 'split' mode) */}
           <div
-            className={`relative h-full bg-navy-950 flex flex-col items-center justify-center p-4 transition-all duration-300 ${
+            className={`relative h-full bg-slate-100 flex flex-col items-center justify-center p-4 transition-all duration-300 ${
               activeView === 'screenshare'
                 ? 'w-full'
                 : activeView === 'split'
@@ -369,7 +369,7 @@ export const WhiteboardRoomPage: React.FC = () => {
             }`}
           >
             {isScreenSharing && screenStream ? (
-              <div className="relative w-full h-full max-h-[88vh] bg-navy-900 rounded-2xl overflow-hidden border border-navy-800 shadow-2xl flex items-center justify-center">
+              <div className="relative w-full h-full max-h-[88vh] bg-slate-900 rounded-2xl overflow-hidden border border-slate-300 shadow-xl flex items-center justify-center">
                 <video
                   autoPlay
                   playsInline
@@ -378,20 +378,20 @@ export const WhiteboardRoomPage: React.FC = () => {
                 />
 
                 {/* Presentation Badge */}
-                <div className="absolute top-4 left-4 bg-navy-950/80 backdrop-blur-md px-3.5 py-1.5 rounded-xl text-xs text-white border border-navy-700 flex items-center space-x-2 shadow-lg">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-active animate-pulse" />
+                <div className="absolute top-4 left-4 bg-slate-900/80 backdrop-blur-md px-3.5 py-1.5 rounded-xl text-xs text-white border border-slate-700 flex items-center space-x-2 shadow-lg">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
                   <span className="font-bold">Bạn đang chia sẻ màn hình</span>
                 </div>
 
                 <button
                   onClick={stopScreenShare}
-                  className="absolute top-4 right-4 bg-rose-alert/90 hover:bg-rose-alert text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition shadow-lg"
+                  className="absolute top-4 right-4 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition shadow-lg"
                 >
                   Dừng chia sẻ
                 </button>
               </div>
             ) : activeScreenSharer ? (
-              <div className="relative w-full h-full max-h-[88vh] bg-navy-900 rounded-2xl overflow-hidden border border-navy-800 shadow-2xl flex items-center justify-center">
+              <div className="relative w-full h-full max-h-[88vh] bg-slate-900 rounded-2xl overflow-hidden border border-slate-300 shadow-xl flex items-center justify-center">
                 {remoteScreenStreams.get(activeScreenSharer.peerId) ? (
                   <video
                     autoPlay
@@ -401,13 +401,13 @@ export const WhiteboardRoomPage: React.FC = () => {
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center text-slate-400 space-y-3">
-                    <div className="w-8 h-8 rounded-full border-2 border-indigo-accent border-t-transparent animate-spin" />
+                    <div className="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
                     <span className="text-xs">Đang tải luồng chia sẻ của {activeScreenSharer.username}...</span>
                   </div>
                 )}
 
                 {/* Presentation Badge */}
-                <div className="absolute top-4 left-4 bg-navy-950/80 backdrop-blur-md px-3.5 py-1.5 rounded-xl text-xs text-white border border-navy-700 flex items-center space-x-2 shadow-lg">
+                <div className="absolute top-4 left-4 bg-slate-900/80 backdrop-blur-md px-3.5 py-1.5 rounded-xl text-xs text-white border border-slate-700 flex items-center space-x-2 shadow-lg">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
                   <span className="font-bold">Màn hình của {activeScreenSharer.username}</span>
                 </div>
@@ -415,7 +415,7 @@ export const WhiteboardRoomPage: React.FC = () => {
                 {/* Quick button to view whiteboard */}
                 <button
                   onClick={() => setActiveView('whiteboard')}
-                  className="absolute top-4 right-4 bg-navy-900/80 hover:bg-navy-800 text-slate-300 hover:text-white text-xs px-3 py-1.5 rounded-xl border border-navy-700 transition flex items-center space-x-1.5 shadow-lg"
+                  className="absolute top-4 right-4 bg-slate-900/80 hover:bg-slate-800 text-slate-200 hover:text-white text-xs px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center space-x-1.5 shadow-lg"
                   title="Chuyển về bảng vẽ [W]"
                 >
                   <span>Xem bảng vẽ</span>
@@ -423,19 +423,19 @@ export const WhiteboardRoomPage: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <div className="glass-card max-w-md w-full p-8 rounded-3xl border border-navy-800 text-center space-y-4">
-                <div className="w-16 h-16 rounded-2xl bg-indigo-accent/20 text-indigo-light flex items-center justify-center mx-auto border border-indigo-accent/30 shadow-lg shadow-indigo-accent/20">
+              <div className="bg-white max-w-md w-full p-8 rounded-3xl border border-slate-200 text-center space-y-4 shadow-sm">
+                <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto border border-indigo-200 shadow-sm">
                   <Monitor size={32} />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">Chia sẻ màn hình</h3>
-                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                  <h3 className="text-base font-bold text-slate-900">Chia sẻ màn hình</h3>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
                     Chia sẻ toàn bộ màn hình, cửa sổ ứng dụng hoặc tài liệu của bạn cho mọi người trong phòng.
                   </p>
                 </div>
                 <button
                   onClick={startScreenShare}
-                  className="bg-indigo-accent hover:bg-indigo-light text-white font-bold text-xs px-5 py-3 rounded-xl transition shadow-xl shadow-indigo-accent/30 flex items-center justify-center space-x-2 mx-auto"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-3 rounded-xl transition shadow-md shadow-indigo-600/20 flex items-center justify-center space-x-2 mx-auto"
                 >
                   <Share2 size={15} />
                   <span>Bắt đầu chia sẻ màn hình</span>

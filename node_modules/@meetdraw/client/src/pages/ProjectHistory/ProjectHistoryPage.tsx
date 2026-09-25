@@ -26,25 +26,25 @@ export const ProjectHistoryPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-navy-950 text-slate-100 flex flex-col p-6">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col p-6 font-sans">
       <div className="max-w-4xl w-full mx-auto space-y-6">
         <Link
           to="/"
-          className="inline-flex items-center space-x-1.5 text-xs text-slate-400 hover:text-white transition"
+          className="inline-flex items-center space-x-1.5 text-xs text-slate-500 hover:text-slate-900 transition"
         >
           <ArrowLeft size={14} />
           <span>Về trang chủ</span>
         </Link>
 
         <div>
-          <h1 className="text-2xl font-bold text-white mb-1">Lịch sử phòng họp & Bản vẽ</h1>
-          <p className="text-xs text-slate-400">
+          <h1 className="text-2xl font-bold text-slate-900 mb-1">Lịch sử phòng họp & Bản vẽ</h1>
+          <p className="text-xs text-slate-500">
             Xem lại danh sách các phòng họp và bản vẽ đã được lưu.
           </p>
         </div>
 
         {loading ? (
-          <div className="p-8 bg-navy-900 border border-navy-800 rounded-2xl text-center text-xs text-slate-400">
+          <div className="p-8 bg-white border border-slate-200 rounded-2xl text-center text-xs text-slate-500 shadow-sm">
             Đang tải dữ liệu lịch sử...
           </div>
         ) : rooms.length > 0 ? (
@@ -53,14 +53,14 @@ export const ProjectHistoryPage: React.FC = () => {
               <div
                 key={room.id}
                 onClick={() => navigate(`/room/${room.id}`)}
-                className="glass-card hover:border-indigo-light/60 p-5 rounded-2xl border border-navy-800 cursor-pointer transition flex items-center justify-between group"
+                className="bg-white hover:border-indigo-400 p-5 rounded-2xl border border-slate-200 cursor-pointer transition flex items-center justify-between group shadow-sm hover:shadow-md"
               >
                 <div className="space-y-1.5">
-                  <div className="text-xs font-bold text-white group-hover:text-indigo-light transition">
+                  <div className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition">
                     {room.name}
                   </div>
-                  <div className="flex items-center space-x-3 text-[11px] text-slate-400">
-                    <span>Mã: <code className="font-mono text-slate-300">{room.id}</code></span>
+                  <div className="flex items-center space-x-3 text-[11px] text-slate-500">
+                    <span>Mã: <code className="font-mono text-slate-700 bg-slate-100 px-1 py-0.5 rounded border border-slate-200">{room.id}</code></span>
                     <span>•</span>
                     <span className="flex items-center space-x-1">
                       <Users size={11} />
@@ -69,22 +69,22 @@ export const ProjectHistoryPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="w-8 h-8 rounded-xl bg-navy-900 flex items-center justify-center text-slate-400 group-hover:text-white transition">
+                <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:text-slate-900 transition">
                   <ExternalLink size={14} />
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="bg-navy-900 border border-navy-800 rounded-2xl p-8 text-center text-slate-400 text-xs space-y-3">
-            <FolderOpen size={36} className="mx-auto text-slate-500" />
-            <p className="text-sm font-semibold text-slate-300">Chưa có phòng họp nào</p>
+          <div className="bg-white border border-dashed border-slate-300 rounded-2xl p-8 text-center text-slate-500 text-xs space-y-3 shadow-sm">
+            <FolderOpen size={36} className="mx-auto text-slate-400" />
+            <p className="text-sm font-semibold text-slate-700">Chưa có phòng họp nào</p>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
               Các phòng họp và bản vẽ bạn tạo sẽ tự động được lưu và xuất hiện tại đây.
             </p>
             <Link
               to="/"
-              className="inline-flex items-center space-x-1.5 mt-2 bg-indigo-accent hover:bg-indigo-light text-white font-semibold text-xs px-4 py-2 rounded-xl transition shadow-md shadow-indigo-accent/30"
+              className="inline-flex items-center space-x-1.5 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-4 py-2 rounded-xl transition shadow-md shadow-indigo-600/20"
             >
               <Video size={14} />
               <span>Tạo phòng họp mới</span>

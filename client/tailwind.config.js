@@ -10,28 +10,28 @@ export default {
         sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
       },
       colors: {
-        // Electric Indigo Canvas Palette
+        // Minimalist Clean Light Palette
         navy: {
-          950: '#0a0e18', // Main deep background
-          900: '#0f131d', // Surface level 1
-          850: '#131824', // Surface level 2
-          800: '#171b26', // Elevated card / border
-          700: '#23293a',
-          600: '#333b52',
+          950: '#f8fafc', // Main crisp background (slate-50)
+          900: '#ffffff', // Primary surface (pure white card)
+          850: '#f1f5f9', // Secondary surface (slate-100 inputs/toggles)
+          800: '#e2e8f0', // Clean structural border (slate-200)
+          700: '#cbd5e1', // Divider / hover border (slate-300)
+          600: '#94a3b8', // Muted icon / subtle elements (slate-400)
         },
         indigo: {
           accent: '#4f46e5',
-          light: '#6366f1',
-          glow: '#818cf8',
+          light: '#4338ca',
+          glow: '#4f46e5',
         },
         emerald: {
-          active: '#10b981',
+          active: '#059669',
         },
         cyan: {
-          accent: '#06b6d4',
+          accent: '#0284c7',
         },
         rose: {
-          alert: '#f43f5e',
+          alert: '#e11d48',
         },
       },
     },

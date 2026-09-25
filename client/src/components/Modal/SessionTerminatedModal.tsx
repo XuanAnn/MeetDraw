@@ -31,26 +31,26 @@ export const SessionTerminatedModal: React.FC<SessionTerminatedModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in select-none">
-      <div className="bg-gray-900 border border-gray-700/80 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 text-center relative overflow-hidden">
-        {/* Amber accent glow */}
-        <div className="absolute -top-12 -left-12 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute -bottom-12 -right-12 w-32 h-32 bg-rose-500/10 rounded-full blur-2xl pointer-events-none" />
+    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in select-none">
+      <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 text-center relative overflow-hidden">
+        {/* Soft accent glow */}
+        <div className="absolute -top-12 -left-12 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-12 -right-12 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
 
         {/* Icon */}
-        <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto shadow-lg shadow-amber-500/5">
+        <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto shadow-sm">
           <ShieldAlert size={34} />
         </div>
 
         {/* Title & Description */}
         <div className="space-y-2">
-          <h2 className="text-lg font-bold text-white tracking-wide">
+          <h2 className="text-lg font-bold text-slate-900 tracking-tight">
             Phiên đăng nhập đã kết thúc
           </h2>
-          <p className="text-sm text-gray-300 font-medium leading-relaxed">
+          <p className="text-sm text-slate-600 font-medium leading-relaxed">
             {reason}
           </p>
-          <p className="text-xs text-gray-400 leading-relaxed pt-1">
+          <p className="text-xs text-slate-500 leading-relaxed pt-1">
             Để đảm bảo an toàn tài khoản và băng thông phòng họp, hệ thống chỉ cho phép một tài khoản hoạt động trên một trình duyệt tại một thời điểm.
           </p>
         </div>
@@ -59,7 +59,7 @@ export const SessionTerminatedModal: React.FC<SessionTerminatedModalProps> = ({
         <div className="pt-2 flex flex-col space-y-2.5">
           <button
             onClick={handleReload}
-            className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center justify-center space-x-2 transition shadow-lg shadow-indigo-600/30"
+            className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center justify-center space-x-2 transition shadow-sm"
           >
             <RefreshCw size={14} />
             <span>Tiếp tục trên trình duyệt này (Lấy lại phiên)</span>
@@ -68,7 +68,7 @@ export const SessionTerminatedModal: React.FC<SessionTerminatedModalProps> = ({
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={handleGoHome}
-              className="py-2 px-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium flex items-center justify-center space-x-1.5 transition border border-gray-700"
+              className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium flex items-center justify-center space-x-1.5 transition border border-slate-200"
             >
               <Home size={13} />
               <span>Về Trang chủ</span>
@@ -76,7 +76,7 @@ export const SessionTerminatedModal: React.FC<SessionTerminatedModalProps> = ({
 
             <button
               onClick={handleLogout}
-              className="py-2 px-3 rounded-xl bg-gray-800 hover:bg-rose-950/60 hover:text-rose-300 text-gray-400 text-xs font-medium flex items-center justify-center space-x-1.5 transition border border-gray-700 hover:border-rose-800/60"
+              className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 text-xs font-medium flex items-center justify-center space-x-1.5 transition border border-slate-200 hover:border-rose-200"
             >
               <LogOut size={13} />
               <span>Đăng xuất</span>

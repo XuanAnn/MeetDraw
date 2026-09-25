@@ -101,7 +101,7 @@ export const VideoTile: React.FC<VideoTileProps> = ({
   }, [showVideo]);
 
   return (
-    <div className="relative aspect-video bg-gray-900 rounded-xl overflow-hidden border border-gray-800 shadow-md flex items-center justify-center group">
+    <div className="relative aspect-video bg-slate-900 rounded-xl overflow-hidden border border-slate-200 shadow-sm flex items-center justify-center group">
       {/* Permanent video element: keeps WebRTC rendering pipeline alive in render tree (no display:none) */}
       <video
         ref={setVideoRef}
@@ -124,21 +124,21 @@ export const VideoTile: React.FC<VideoTileProps> = ({
         <div className="flex flex-col items-center justify-center space-y-2 z-10">
           <div
             className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white text-lg shadow-inner transition-all ${
-              !isAudioMuted ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-900' : ''
+              !isAudioMuted ? 'ring-2 ring-emerald-500 ring-offset-2 ring-offset-slate-900' : ''
             }`}
             style={{ backgroundColor: userColor }}
           >
             {username.charAt(0).toUpperCase()}
           </div>
-          <span className="text-xs text-gray-400 font-medium">{username}</span>
+          <span className="text-xs text-slate-300 font-medium">{username}</span>
         </div>
       )}
 
       {/* User tag and status overlay */}
       <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none">
-        <div className="bg-gray-950/80 backdrop-blur-sm px-2 py-0.5 rounded-md text-[11px] text-gray-200 font-medium flex items-center space-x-1.5 border border-gray-800">
+        <div className="bg-slate-900/80 backdrop-blur-sm px-2 py-0.5 rounded-md text-[11px] text-slate-200 font-medium flex items-center space-x-1.5 border border-slate-700/50 shadow-sm">
           <span>{username}</span>
-          {isLocal && <span className="text-[9px] text-sky-400 uppercase font-bold">(You)</span>}
+          {isLocal && <span className="text-[9px] text-indigo-300 uppercase font-bold">(You)</span>}
           {!isAudioMuted && (
             <span className="flex items-center space-x-0.5 ml-1">
               <span className="w-1 h-2 bg-emerald-400 rounded-full animate-pulse" />
@@ -151,7 +151,7 @@ export const VideoTile: React.FC<VideoTileProps> = ({
         <div className="flex items-center space-x-1">
           <div
             className={`p-1 rounded-md text-white backdrop-blur-sm ${
-              isAudioMuted ? 'bg-rose-500/80' : 'bg-emerald-500/80'
+              isAudioMuted ? 'bg-rose-500/90' : 'bg-emerald-500/90'
             }`}
           >
             {isAudioMuted ? <MicOff size={12} /> : <Mic size={12} />}
@@ -159,7 +159,7 @@ export const VideoTile: React.FC<VideoTileProps> = ({
 
           <div
             className={`p-1 rounded-md text-white backdrop-blur-sm ${
-              isVideoMuted ? 'bg-rose-500/80' : 'bg-gray-950/60'
+              isVideoMuted ? 'bg-rose-500/90' : 'bg-slate-900/70'
             }`}
           >
             {isVideoMuted ? <VideoOff size={12} /> : <Video size={12} />}

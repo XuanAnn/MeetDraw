@@ -102,49 +102,49 @@ export const DashboardPage: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-navy-950 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
       {/* Top Bar Navigation */}
-      <header className="h-16 px-6 glass-panel border-b border-navy-800 flex items-center justify-between sticky top-0 z-30">
+      <header className="h-16 px-6 bg-white border-b border-slate-200 flex items-center justify-between sticky top-0 z-30 shadow-sm">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2.5 cursor-pointer" onClick={() => navigate('/')}>
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-accent to-indigo-light flex items-center justify-center font-extrabold text-white shadow-lg shadow-indigo-accent/30">
+            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center font-extrabold text-white shadow-md shadow-indigo-600/20">
               MD
             </div>
             <div>
-              <span className="font-bold text-base text-white tracking-tight">MeetDraw</span>
-              <span className="ml-2 text-[10px] bg-indigo-accent/20 text-indigo-glow px-2 py-0.5 rounded-full border border-indigo-accent/30 font-semibold uppercase">
+              <span className="font-bold text-base text-slate-900 tracking-tight">MeetDraw</span>
+              <span className="ml-2 text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200 font-semibold uppercase">
                 Spatial Pro
               </span>
             </div>
           </div>
 
-          <div className="hidden md:flex items-center pl-6 border-l border-navy-800 text-xs text-slate-400">
+          <div className="hidden md:flex items-center pl-6 border-l border-slate-200 text-xs text-slate-500">
             <span>Enterprise Hybrid Suite</span>
           </div>
         </div>
 
         {/* Center Search bar */}
-        <div className="hidden lg:flex items-center w-80 bg-navy-900 border border-navy-800 rounded-xl px-3 py-1.5 focus-within:border-indigo-light transition">
-          <Search size={15} className="text-slate-500 mr-2" />
+        <div className="hidden lg:flex items-center w-80 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 focus-within:border-indigo-600 focus-within:bg-white transition">
+          <Search size={15} className="text-slate-400 mr-2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Tìm kiếm phòng họp, bản vẽ..."
-            className="bg-transparent text-xs text-slate-200 focus:outline-none w-full placeholder-slate-500"
+            className="bg-transparent text-xs text-slate-900 focus:outline-none w-full placeholder-slate-400"
           />
         </div>
 
         {/* Right User & Actions */}
         <div className="flex items-center space-x-3">
-          <div className="hidden sm:flex items-center space-x-1.5 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-full text-[11px] text-emerald-active font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <div className="hidden sm:flex items-center space-x-1.5 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full text-[11px] text-emerald-700 font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             <span>Trực tuyến</span>
           </div>
 
           <button
             onClick={() => navigate('/settings')}
-            className="p-2 text-slate-400 hover:text-slate-200 rounded-xl hover:bg-navy-850 transition"
+            className="p-2 text-slate-500 hover:text-slate-900 rounded-xl hover:bg-slate-100 transition"
             title="Cài đặt & Thiết bị"
           >
             <Shield size={18} />
@@ -154,25 +154,25 @@ export const DashboardPage: React.FC = () => {
             href={window.location.hostname === 'localhost' ? 'http://localhost:5000/monitor' : 'https://meetgold.onrender.com/monitor'}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center space-x-1.5 bg-navy-850 hover:bg-navy-800 text-sky-400 hover:text-sky-300 border border-navy-700/80 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition"
+            className="flex items-center space-x-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition shadow-sm"
             title="Mở giao diện giám sát Server (Room Monitor)"
           >
-            <Activity size={14} className="text-sky-400" />
+            <Activity size={14} className="text-indigo-600" />
             <span>Room Monitor</span>
           </a>
 
-          <div className="flex items-center space-x-2.5 pl-2 border-l border-navy-800">
+          <div className="flex items-center space-x-2.5 pl-2 border-l border-slate-200">
             <div
-              className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-xs shadow-md ring-1 ring-white/20"
+              className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-xs shadow-sm ring-1 ring-slate-200"
               style={{ backgroundColor: userColor }}
             >
               {displayName.charAt(0).toUpperCase()}
             </div>
             <div className="hidden sm:block text-left text-xs">
-              <div className="font-semibold text-slate-200 leading-tight flex items-center space-x-1.5">
+              <div className="font-semibold text-slate-900 leading-tight flex items-center space-x-1.5">
                 <span>{displayName}</span>
               </div>
-              <div className="text-[10px] text-slate-400 truncate max-w-[120px]">
+              <div className="text-[10px] text-slate-500 truncate max-w-[120px]">
                 {currentUser?.email || 'Đã đăng nhập'}
               </div>
             </div>
@@ -182,7 +182,7 @@ export const DashboardPage: React.FC = () => {
                 logout();
                 navigate('/login');
               }}
-              className="ml-2 p-2 text-slate-400 hover:text-rose-alert hover:bg-navy-850 rounded-xl transition"
+              className="ml-2 p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
               title="Đăng xuất"
             >
               <LogOut size={16} />
@@ -194,18 +194,18 @@ export const DashboardPage: React.FC = () => {
       {/* Dashboard Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-8 space-y-8">
         {/* Welcome Banner */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-navy-800/80">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-200">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               Không gian làm việc
             </h1>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1">
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
               Phòng họp trực tuyến với video độ trễ thấp và bảng vẽ tương tác thời gian thực.
             </p>
           </div>
 
-          <div className="flex items-center space-x-2 text-xs bg-navy-900 border border-navy-800 px-3 py-1.5 rounded-xl text-slate-300">
-            <Clock size={14} className="text-indigo-glow" />
+          <div className="flex items-center space-x-2 text-xs bg-white border border-slate-200 px-3 py-1.5 rounded-xl text-slate-600 shadow-sm">
+            <Clock size={14} className="text-indigo-600" />
             <span>
               {new Date().toLocaleDateString('vi-VN', {
                 weekday: 'short',
@@ -222,32 +222,31 @@ export const DashboardPage: React.FC = () => {
           {/* Action 1: Instant Meeting */}
           <div
             onClick={isStartingInstant ? undefined : handleStartInstant}
-            className={`glass-card hover:border-indigo-accent/80 p-5 rounded-2xl transition-all duration-200 hover:-translate-y-1 group relative overflow-hidden ${
+            className={`bg-white border border-slate-200 hover:border-indigo-400 hover:shadow-lg p-5 rounded-2xl transition-all duration-200 hover:-translate-y-1 group relative overflow-hidden shadow-sm ${
               isStartingInstant ? 'opacity-60 cursor-wait' : 'cursor-pointer'
             }`}
           >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-accent/10 rounded-full blur-2xl group-hover:bg-indigo-accent/20 transition" />
-            <div className="w-11 h-11 rounded-xl bg-indigo-accent text-white flex items-center justify-center shadow-lg shadow-indigo-accent/40 mb-4 group-hover:scale-110 transition">
+            <div className="w-11 h-11 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/20 mb-4 group-hover:scale-105 transition">
               <Video size={22} />
             </div>
-            <h3 className="text-sm font-bold text-white mb-1">Bắt đầu cuộc họp mới</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <h3 className="text-sm font-bold text-slate-900 mb-1">Bắt đầu cuộc họp mới</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
               Tạo phòng họp trực tuyến tức thì có hỗ trợ camera, microphone và bảng vẽ chia sẻ.
             </p>
-            <div className="mt-4 flex items-center text-xs text-indigo-light font-semibold group-hover:translate-x-1 transition">
+            <div className="mt-4 flex items-center text-xs text-indigo-600 font-semibold group-hover:translate-x-1 transition">
               <span>{isStartingInstant ? 'Đang tạo phòng...' : 'Bắt đầu ngay'}</span>
               <ArrowRight size={13} className="ml-1" />
             </div>
           </div>
 
           {/* Action 2: Join with Code */}
-          <div className="glass-card p-5 rounded-2xl flex flex-col justify-between">
+          <div className="bg-white border border-slate-200 p-5 rounded-2xl flex flex-col justify-between shadow-sm">
             <div>
-              <div className="w-11 h-11 rounded-xl bg-emerald-500/20 text-emerald-active flex items-center justify-center shadow-lg shadow-emerald-active/10 mb-4 border border-emerald-500/30">
+              <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4 border border-emerald-200 shadow-sm">
                 <Users size={22} />
               </div>
-              <h3 className="text-sm font-bold text-white mb-1">Tham gia bằng mã</h3>
-              <p className="text-xs text-slate-400 mb-3 leading-relaxed">
+              <h3 className="text-sm font-bold text-slate-900 mb-1">Tham gia bằng mã</h3>
+              <p className="text-xs text-slate-600 mb-3 leading-relaxed">
                 Nhập mã phòng hoặc liên kết phòng họp để tham gia ngay.
               </p>
             </div>
@@ -257,33 +256,32 @@ export const DashboardPage: React.FC = () => {
                 value={joinInput}
                 onChange={(e) => setJoinInput(e.target.value)}
                 placeholder="Nhập mã phòng..."
-                className="w-full bg-navy-900 border border-navy-700 text-slate-100 text-xs px-3 py-2 rounded-xl focus:outline-none focus:border-emerald-active"
+                className="w-full bg-slate-50 border border-slate-300 text-slate-900 text-xs px-3 py-2 rounded-xl focus:outline-none focus:border-emerald-600 focus:bg-white transition"
               />
               <button
                 type="submit"
                 disabled={!joinInput.trim() || isJoining}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-semibold text-xs py-2 rounded-xl transition"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-semibold text-xs py-2 rounded-xl transition shadow-sm"
               >
                 {isJoining ? 'Đang kiểm tra...' : 'Vào phòng họp'}
               </button>
-              {joinError && <p className="text-[11px] text-rose-alert">{joinError}</p>}
+              {joinError && <p className="text-[11px] text-rose-600 font-medium">{joinError}</p>}
             </form>
           </div>
 
           {/* Action 3: New Whiteboard */}
           <div
             onClick={handleNewWhiteboard}
-            className="glass-card hover:border-purple-500/80 p-5 rounded-2xl cursor-pointer transition-all duration-200 hover:-translate-y-1 group relative overflow-hidden"
+            className="bg-white border border-slate-200 hover:border-purple-400 hover:shadow-lg p-5 rounded-2xl cursor-pointer transition-all duration-200 hover:-translate-y-1 group relative overflow-hidden shadow-sm"
           >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition" />
-            <div className="w-11 h-11 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center shadow-lg shadow-purple-500/10 mb-4 group-hover:scale-110 transition border border-purple-500/30">
+            <div className="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-4 border border-purple-200 shadow-sm group-hover:scale-105 transition">
               <Palette size={22} />
             </div>
-            <h3 className="text-sm font-bold text-white mb-1">Bảng vẽ độc lập</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <h3 className="text-sm font-bold text-slate-900 mb-1">Bảng vẽ độc lập</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
               Mở không gian bảng vẽ vô cực để phác thảo ý tưởng và lưu trữ sơ đồ.
             </p>
-            <div className="mt-4 flex items-center text-xs text-purple-400 font-semibold group-hover:translate-x-1 transition">
+            <div className="mt-4 flex items-center text-xs text-purple-600 font-semibold group-hover:translate-x-1 transition">
               <span>Mở bảng vẽ</span>
               <ArrowRight size={13} className="ml-1" />
             </div>
@@ -294,10 +292,10 @@ export const DashboardPage: React.FC = () => {
         <div className="space-y-4 pt-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Layers size={18} className="text-indigo-light" />
-              <h2 className="text-base font-bold text-white">Bảng vẽ & Phòng họp gần đây</h2>
+              <Layers size={18} className="text-indigo-600" />
+              <h2 className="text-base font-bold text-slate-900">Bảng vẽ & Phòng họp gần đây</h2>
               {realRooms.length > 0 && (
-                <span className="text-[11px] bg-emerald-500/20 text-emerald-active border border-emerald-500/40 px-2 py-0.5 rounded-full font-medium">
+                <span className="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-medium">
                   {realRooms.length} phòng
                 </span>
               )}
@@ -305,8 +303,8 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           {isLoadingRooms ? (
-            <div className="p-8 text-center border border-dashed border-navy-800 rounded-2xl bg-navy-900/30">
-              <div className="text-xs text-slate-400">Đang tải danh sách phòng họp...</div>
+            <div className="p-8 text-center border border-dashed border-slate-300 rounded-2xl bg-white shadow-sm">
+              <div className="text-xs text-slate-500">Đang tải danh sách phòng họp...</div>
             </div>
           ) : filteredRooms.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -314,39 +312,39 @@ export const DashboardPage: React.FC = () => {
                 <div
                   key={room.id}
                   onClick={() => navigate(`/room/${room.id}`)}
-                  className="glass-card hover:border-indigo-light/60 rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 group hover:-translate-y-1 relative"
+                  className="bg-white border border-slate-200 hover:border-indigo-400 hover:shadow-md rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 group hover:-translate-y-0.5 shadow-sm relative"
                 >
                   <div
                     className={`h-28 bg-gradient-to-br ${
                       idx % 3 === 0
-                        ? 'from-indigo-900/60 to-navy-900'
+                        ? 'from-indigo-50 to-slate-100'
                         : idx % 3 === 1
-                        ? 'from-cyan-900/60 to-navy-900'
-                        : 'from-purple-900/60 to-navy-900'
-                    } p-4 flex flex-col justify-between relative border-b border-navy-800`}
+                        ? 'from-sky-50 to-slate-100'
+                        : 'from-purple-50 to-slate-100'
+                    } p-4 flex flex-col justify-between relative border-b border-slate-200`}
                   >
                     <div className="flex justify-between items-start">
-                      <span className="text-[10px] bg-navy-950/80 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                      <span className="text-[10px] bg-white text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200 shadow-sm font-medium">
                         Đã lưu
                       </span>
-                      <div className="w-6 h-6 rounded-lg bg-navy-950/60 flex items-center justify-center text-slate-400 group-hover:text-white">
+                      <div className="w-6 h-6 rounded-lg bg-white/90 border border-slate-200 flex items-center justify-center text-slate-500 group-hover:text-slate-900 shadow-sm">
                         <ExternalLink size={12} />
                       </div>
                     </div>
 
-                    <div className="opacity-30 group-hover:opacity-60 transition flex items-center space-x-3">
-                      <div className="w-12 h-6 rounded border border-white/60" />
-                      <div className="h-[1px] w-6 bg-white/60" />
-                      <div className="w-6 h-6 rounded-full border border-white/60" />
+                    <div className="opacity-40 group-hover:opacity-70 transition flex items-center space-x-3 text-slate-400">
+                      <div className="w-12 h-6 rounded border border-slate-400" />
+                      <div className="h-[1px] w-6 bg-slate-400" />
+                      <div className="w-6 h-6 rounded-full border border-slate-400" />
                     </div>
                   </div>
 
                   <div className="p-4 space-y-2">
-                    <h4 className="text-xs font-bold text-white truncate group-hover:text-indigo-light transition">
+                    <h4 className="text-xs font-bold text-slate-900 truncate group-hover:text-indigo-600 transition">
                       {room.name}
                     </h4>
-                    <div className="flex items-center justify-between text-[11px] text-slate-400">
-                      <span>Mã: <code className="font-mono text-slate-300">{room.id}</code></span>
+                    <div className="flex items-center justify-between text-[11px] text-slate-500">
+                      <span>Mã: <code className="font-mono text-slate-700 bg-slate-100 px-1 py-0.5 rounded border border-slate-200">{room.id}</code></span>
                       <span className="flex items-center space-x-1">
                         <Users size={11} />
                         <span>{room.memberCount || 1} người</span>
@@ -357,9 +355,9 @@ export const DashboardPage: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="p-8 text-center border border-dashed border-navy-800 rounded-2xl bg-navy-900/30 space-y-3">
-              <FolderOpen size={36} className="mx-auto text-slate-500" />
-              <div className="text-sm font-semibold text-slate-300">
+            <div className="p-8 text-center border border-dashed border-slate-300 rounded-2xl bg-white shadow-sm space-y-3">
+              <FolderOpen size={36} className="mx-auto text-slate-400" />
+              <div className="text-sm font-semibold text-slate-700">
                 {searchQuery ? 'Không tìm thấy phòng họp phù hợp' : 'Chưa có phòng họp nào'}
               </div>
               <p className="text-xs text-slate-500 max-w-md mx-auto">
@@ -370,7 +368,7 @@ export const DashboardPage: React.FC = () => {
               {!searchQuery && (
                 <button
                   onClick={handleStartInstant}
-                  className="mt-2 px-4 py-2 rounded-xl bg-indigo-accent hover:bg-indigo-light text-white text-xs font-semibold shadow-md shadow-indigo-accent/30 transition inline-flex items-center space-x-1.5"
+                  className="mt-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-md shadow-indigo-600/20 transition inline-flex items-center space-x-1.5"
                 >
                   <Video size={14} />
                   <span>Tạo phòng họp đầu tiên</span>

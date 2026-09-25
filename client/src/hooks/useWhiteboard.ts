@@ -34,7 +34,7 @@ export function useWhiteboard(options: WhiteboardOptions) {
 
   const canvasRef = useRef<fabric.Canvas | null>(null);
   const [activeTool, setActiveTool] = useState<ToolType>('pen');
-  const [strokeColor, setStrokeColor] = useState<string>('#6366f1');
+  const [strokeColor, setStrokeColor] = useState<string>('#1e293b');
   const [strokeWidth, setStrokeWidth] = useState<number>(3);
   const [fillColor, setFillColor] = useState<string>('transparent');
   const [zoomLevel, setZoomLevel] = useState<number>(100);
@@ -70,7 +70,7 @@ export function useWhiteboard(options: WhiteboardOptions) {
     const canvas = new fabric.Canvas(canvasElementId, {
       width,
       height,
-      backgroundColor: '#0a0e18',
+      backgroundColor: '#ffffff',
       selection: true,
       preserveObjectStacking: true,
     });
@@ -529,7 +529,7 @@ export function useWhiteboard(options: WhiteboardOptions) {
         }
         case 'CLEAR': {
           canvas.clear();
-          canvas.backgroundColor = '#0a0e18';
+          canvas.backgroundColor = '#ffffff';
           canvas.renderAll();
           break;
         }
@@ -597,7 +597,7 @@ export function useWhiteboard(options: WhiteboardOptions) {
     if (!canvas) return;
 
     canvas.clear();
-    canvas.backgroundColor = '#0a0e18';
+    canvas.backgroundColor = '#ffffff';
     canvas.renderAll();
 
     const event: WhiteboardEvent = {
