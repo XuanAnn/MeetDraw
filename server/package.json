@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc && node -e \"const fs=require('fs'); fs.mkdirSync('dist/monitor', {recursive:true}); fs.copyFileSync('src/monitor/monitor.dashboard.html', 'dist/monitor/monitor.dashboard.html')\"",
+    "build": "tsc && node copy-assets.js",
     "start": "node dist/server.js"
   },
   "dependencies": {

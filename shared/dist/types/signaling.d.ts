@@ -1,10 +1,35 @@
-export type SignalType = 'JOIN_ROOM' | 'LEAVE_ROOM' | 'ROOM_JOINED' | 'USER_JOINED' | 'USER_LEFT' | 'OFFER' | 'ANSWER' | 'ICE_CANDIDATE' | 'ROOM_USERS' | 'ERROR' | 'SFU_PRODUCE' | 'SFU_PRODUCE_ACK' | 'SFU_CONSUME' | 'SFU_CONSUME_ACK' | 'SFU_PRODUCER_ADDED' | 'SFU_PRODUCER_CLOSED' | 'SFU_PAUSE_PRODUCER' | 'SFU_RESUME_PRODUCER' | 'SFU_ACTIVE_SPEAKER' | 'SFU_STATS';
+export type SignalType =
+  | 'JOIN_ROOM'
+  | 'LEAVE_ROOM'
+  | 'ROOM_JOINED'
+  | 'USER_JOINED'
+  | 'USER_LEFT'
+  | 'OFFER'
+  | 'ANSWER'
+  | 'ICE_CANDIDATE'
+  | 'ROOM_USERS'
+  | 'ERROR'
+  | 'SESSION_TERMINATED'
+  | 'SFU_PRODUCE'
+  | 'SFU_PRODUCE_ACK'
+  | 'SFU_CONSUME'
+  | 'SFU_CONSUME_ACK'
+  | 'SFU_PRODUCER_ADDED'
+  | 'SFU_PRODUCER_CLOSED'
+  | 'SFU_CLOSE_PRODUCER'
+  | 'SFU_PAUSE_PRODUCER'
+  | 'SFU_RESUME_PRODUCER'
+  | 'SFU_ACTIVE_SPEAKER'
+  | 'SFU_STATS'
+  | 'TELEMETRY_REPORT';
+
 export interface PeerInfo {
     id: string;
     username: string;
     userId?: string;
     joinedAt: number;
     isHost?: boolean;
+    isManage?: boolean;
 }
 export interface SignalMessage<T = unknown> {
     type: SignalType;
@@ -47,6 +72,10 @@ export interface ErrorPayload {
     message: string;
     code?: string;
 }
+export interface SessionTerminatedPayload {
+    reason: string;
+    code?: 'DUPLICATE_LOGIN' | 'CONCURRENT_SESSION';
+}
 export interface SfuProducerInfo {
     producerId: string;
     peerId: string;
@@ -81,6 +110,10 @@ export interface SfuProducerClosedPayload {
     peerId: string;
     kind: 'audio' | 'video';
 }
+export interface SfuCloseProducerPayload {
+    producerId?: string;
+    mediaType?: 'camera' | 'screen';
+}
 export interface SfuPauseProducerPayload {
     producerId: string;
     paused: boolean;
@@ -96,4 +129,3 @@ export interface SfuStatsPayload {
     topology: 'SFU';
     activeSpeakerId: string | null;
 }
-//# sourceMappingURL=signaling.d.ts.map

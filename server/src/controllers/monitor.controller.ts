@@ -37,7 +37,7 @@ export class MonitorController {
   // 3. Get full snapshot of a specific room
   static getRoomSnapshot(req: Request, res: Response): void {
     try {
-      const { roomId } = req.params;
+      const roomId = (Array.isArray(req.params.roomId) ? req.params.roomId[0] : req.params.roomId) || '';
       if (!roomId) {
         res.status(400).json({ error: 'Missing roomId' });
         return;
