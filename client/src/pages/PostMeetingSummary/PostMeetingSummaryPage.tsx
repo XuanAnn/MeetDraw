@@ -7,6 +7,7 @@ import {
   Calendar,
   Layers,
   ExternalLink,
+  Sparkles,
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { RoomDetails } from '@meetdraw/shared';
