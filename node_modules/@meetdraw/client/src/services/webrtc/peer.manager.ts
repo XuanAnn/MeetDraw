@@ -50,6 +50,7 @@ export class PeerManager {
   private currentScreenStream: MediaStream | null = null;
   private pendingInitialOffers = new Set<string>();
   private negotiatingPeers = new Set<string>();
+  private telemetryTimer: any = null;
 
   constructor() {}
 
@@ -57,6 +58,7 @@ export class PeerManager {
     this.roomId = roomId;
     this.listeners = listeners;
     this.bindSignaling();
+    this.startTelemetryLoop();
 
     // Initialize SFU Coordinator
     sfuCoordinator.init(roomId, signalingService.selfPeerId || '', {
@@ -119,16 +121,24 @@ export class PeerManager {
       try {
         log.info('RECEIVE_OFFER', msg.senderId);
 
-        // 1. Set remote description from incoming offer first so transceivers match the remote offer m-lines
+        // 1. Set remote description from incoming offer
         await peer.setRemoteDescription(msg.payload.sdp);
 
-        // 2. Attach local stream tracks to the negotiated transceivers
+        // 2. Attach local stream tracks (Camera & Mic)
         const localStream = this.localStream || mediaStreamManager.getStream();
         if (localStream) {
           await peer.addLocalStream(localStream);
         }
 
-        // 3. Create answer with bidirectional tracks and send back
+        // 3. If currently sharing screen, attach screen track
+        if (this.currentScreenStream) {
+          const screenTrack = this.currentScreenStream.getVideoTracks()[0] || null;
+          if (screenTrack) {
+            await peer.setScreenTrack(screenTrack, this.currentScreenStream);
+          }
+        }
+
+        // 4. Create answer with bidirectional tracks and send back
         const answer = await peer.createAnswer();
         signalingService.sendAnswer(this.roomId!, msg.senderId, answer);
       } catch (err) {
@@ -196,7 +206,20 @@ export class PeerManager {
   }
 
   private async createAndSendOffer(peerId: string, peer: SinglePeerConnection) {
-    if (this.negotiatingPeers.has(peerId) || peer.pc.signalingState !== 'stable' || !this.roomId) return;
+    if (!this.roomId) return;
+    if (peer.pc.signalingState !== 'stable') {
+      log.info(`Peer ${peerId} signaling state is ${peer.pc.signalingState}, waiting for stable`);
+      const onStable = async () => {
+        if (peer.pc.signalingState === 'stable') {
+          peer.pc.removeEventListener('signalingstatechange', onStable);
+          await this.createAndSendOffer(peerId, peer);
+        }
+      };
+      peer.pc.addEventListener('signalingstatechange', onStable);
+      return;
+    }
+
+    if (this.negotiatingPeers.has(peerId)) return;
     this.negotiatingPeers.add(peerId);
     try {
       const offer = await peer.createOffer();
@@ -346,6 +369,18 @@ export class PeerManager {
       payload: event,
     };
     this.broadcastData(packet);
+
+    // Also report to Server Room Monitor
+    if (this.roomId) {
+      const payload: any = event.payload;
+      signalingService.sendTelemetry(this.roomId, {
+        whiteboardAction: {
+          action: event.type as any,
+          object: payload?.object,
+          objectIds: payload?.ids,
+        },
+      });
+    }
   }
 
   broadcastChatMessage(msg: ChatMessage) {
@@ -400,10 +435,12 @@ export class PeerManager {
     const isSharing = !!screenStream;
     const screenTrack = screenStream ? screenStream.getVideoTracks()[0] || null : null;
 
-    // 1. Send screen track on dedicated screen transceiver across all P2P connections
-    // Camera track is 100% untouched and continues streaming uninterrupted!
-    for (const peer of this.peers.values()) {
-      await peer.setScreenTrack(screenTrack);
+    // 1. Send screen track on all peers and renegotiate (Camera track remains untouched!)
+    for (const [peerId, peer] of this.peers.entries()) {
+      const needsOffer = await peer.setScreenTrack(screenTrack, screenStream || undefined);
+      if (needsOffer) {
+        await this.createAndSendOffer(peerId, peer);
+      }
     }
 
     // 2. Broadcast screen share state packet to all peers via DataChannel
@@ -423,6 +460,45 @@ export class PeerManager {
     } else {
       sfuCoordinator.closeScreenTrack();
     }
+
+    // 4. Report media state to Server Room Monitor
+    if (this.roomId) {
+      signalingService.sendTelemetry(this.roomId, {
+        mediaState: {
+          isMicOn: mediaStreamManager.isAudioEnabled(),
+          isCamOn: mediaStreamManager.isVideoEnabled(),
+          isScreenSharing: isSharing,
+        },
+      });
+    }
+  }
+
+  private startTelemetryLoop() {
+    this.telemetryTimer = setInterval(async () => {
+      if (!this.roomId || this.peers.size === 0) return;
+
+      const connectionStats: any[] = [];
+      for (const [pId, peer] of this.peers.entries()) {
+        try {
+          const stats = await peer.getTelemetryStats();
+          connectionStats.push({
+            targetPeerId: pId,
+            connectionState: stats.connectionState,
+            iceState: stats.iceState,
+            selectedCandidatePair: stats.selectedCandidatePair,
+          });
+        } catch (e) {}
+      }
+
+      signalingService.sendTelemetry(this.roomId, {
+        connectionStats,
+        mediaState: {
+          isMicOn: mediaStreamManager.isAudioEnabled(),
+          isCamOn: mediaStreamManager.isVideoEnabled(),
+          isScreenSharing: !!this.currentScreenStream,
+        },
+      });
+    }, 2500);
   }
 
   private async attachStreamAndNegotiate(
@@ -442,6 +518,8 @@ export class PeerManager {
   }
 
   cleanup() {
+    clearInterval(this.telemetryTimer);
+    this.telemetryTimer = null;
     sfuCoordinator.cleanup();
     this.unsubscribers.forEach((u) => u());
     this.unsubscribers = [];

@@ -12,6 +12,7 @@ import {
   Palette,
   LogOut,
   FolderOpen,
+  Activity,
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { useUserStore } from '../../stores/user.store';
@@ -148,6 +149,17 @@ export const DashboardPage: React.FC = () => {
           >
             <Shield size={18} />
           </button>
+
+          <a
+            href={window.location.hostname === 'localhost' ? 'http://localhost:5000/monitor' : 'https://meetgold.onrender.com/monitor'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center space-x-1.5 bg-navy-850 hover:bg-navy-800 text-sky-400 hover:text-sky-300 border border-navy-700/80 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition"
+            title="Mở giao diện giám sát Server (Room Monitor)"
+          >
+            <Activity size={14} className="text-sky-400" />
+            <span>Room Monitor</span>
+          </a>
 
           <div className="flex items-center space-x-2.5 pl-2 border-l border-navy-800">
             <div

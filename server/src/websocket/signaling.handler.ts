@@ -20,6 +20,8 @@ import {
 import { roomManager } from './room.manager';
 import { sfuManager } from './sfu.manager';
 import { RoomService } from '../services/room.service';
+import { roomMonitorStore } from '../monitor/room.monitor.store';
+import { ExtWebSocket } from './signaling.server';
 
 export class SignalingHandler {
   static handleMessage(ws: WebSocket, senderId: string, rawData: string): void {
@@ -45,6 +47,10 @@ export class SignalingHandler {
         case 'ANSWER':
         case 'ICE_CANDIDATE':
           this.handleP2PSignal(message);
+          break;
+
+        case 'TELEMETRY_REPORT':
+          this.handleTelemetryReport(roomId, senderId, payload as any);
           break;
 
         // SFU Specific Signaling
@@ -95,9 +101,24 @@ export class SignalingHandler {
     // Join in roomManager with duplicate session detection
     const { peers, isHost, kickedPeer } = roomManager.joinRoom(roomId, peerId, username, ws, userId, email);
 
+    // Record user join in RoomMonitorStore (renamed to Manage role)
+    const extWs = ws as ExtWebSocket;
+    const clientIp = extWs.clientIp || '127.0.0.1';
+    const clientPort = extWs.clientPort || 0;
+    roomMonitorStore.recordUserJoin(roomId, {
+      peerId,
+      username,
+      userId,
+      socketId: peerId,
+      ip: clientIp,
+      port: clientPort,
+      isManage: isHost,
+    });
+
     // If an old session was kicked, clean up its SFU resources and broadcast USER_LEFT
     if (kickedPeer) {
       sfuManager.removePeer(kickedPeer.id);
+      roomMonitorStore.recordUserLeave(roomId, kickedPeer.id);
       const userLeftMsg: SignalMessage<UserLeftPayload> = {
         type: 'USER_LEFT',
         roomId,
@@ -173,6 +194,9 @@ export class SignalingHandler {
     const result = roomManager.leaveRoom(peerId);
     if (result) {
       const { roomId } = result;
+
+      // Update RoomMonitorStore
+      roomMonitorStore.recordUserLeave(roomId, peerId);
 
       // Clean up SFU state
       const sfuResult = sfuManager.removePeer(peerId);
@@ -261,7 +285,16 @@ export class SignalingHandler {
     };
     roomManager.broadcastToRoom(roomId, prodAddedMsg, peerId);
 
-    // 3. Broadcast updated SFU stats
+    // 3. Record in RoomMonitorStore
+    if (payload.mediaType === 'screen') {
+      roomMonitorStore.recordMediaChange(roomId, peerId, 'SCREEN', 'STARTED');
+    } else if (payload.kind === 'video') {
+      roomMonitorStore.recordMediaChange(roomId, peerId, 'CAMERA', 'STARTED');
+    } else if (payload.kind === 'audio') {
+      roomMonitorStore.recordMediaChange(roomId, peerId, 'MICROPHONE', 'STARTED');
+    }
+
+    // 4. Broadcast updated SFU stats
     this.broadcastSfuStats(roomId);
   }
 
@@ -328,6 +361,10 @@ export class SignalingHandler {
         (!payload?.mediaType || prod.mediaType === payload.mediaType)
       ) {
         sfuManager.closeProducer(roomId, prod.id);
+        if (prod.mediaType === 'screen') {
+          roomMonitorStore.recordMediaChange(roomId, peerId, 'SCREEN', 'STOPPED');
+        }
+
         const prodClosedMsg: SignalMessage<SfuProducerClosedPayload> = {
           type: 'SFU_PRODUCER_CLOSED',
           roomId,
@@ -378,16 +415,33 @@ export class SignalingHandler {
   }
 
   private static handleP2PSignal(message: SignalMessage): void {
-    const { roomId, senderId, targetId, type } = message;
+    const { roomId, senderId, targetId, type, payload } = message;
     if (!targetId) {
       console.warn(`[SignalingHandler] ${type} message missing targetId from peer ${senderId}`);
       return;
+    }
+
+    // Monitor WebRTC Signaling & ICE candidates in RoomMonitorStore
+    if (type === 'OFFER' || type === 'ANSWER') {
+      roomMonitorStore.recordP2POfferAnswer(roomId, senderId, targetId, type);
+    } else if (type === 'ICE_CANDIDATE') {
+      const candidatePayload = payload as any;
+      if (candidatePayload?.candidate) {
+        const c = candidatePayload.candidate;
+        const candidateStr = typeof c === 'string' ? c : c.candidate || '';
+        roomMonitorStore.recordCandidate(roomId, senderId, candidateStr, c.sdpMid || null, c.sdpMLineIndex ?? null);
+      }
     }
 
     const delivered = roomManager.sendToPeer(roomId, targetId, message);
     if (!delivered) {
       console.warn(`[SignalingHandler] Failed to route ${type} from ${senderId} to ${targetId} in room ${roomId}`);
     }
+  }
+
+  private static handleTelemetryReport(roomId: string, senderId: string, payload: any): void {
+    if (!roomId || !senderId || !payload) return;
+    roomMonitorStore.recordTelemetry(roomId, senderId, payload);
   }
 
   private static sendError(ws: WebSocket, roomId: string, senderId: string, message: string): void {
@@ -403,3 +457,4 @@ export class SignalingHandler {
     }
   }
 }
+

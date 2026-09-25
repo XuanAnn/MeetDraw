@@ -8,6 +8,7 @@ import {
   Palette,
   Monitor,
   Columns,
+  Activity,
 } from 'lucide-react';
 import { SfuStatsPayload } from '@meetdraw/shared';
 
@@ -151,6 +152,18 @@ export const TopNav: React.FC<TopNavProps> = ({
             {displayName}
           </span>
         </div>
+
+        {/* Server Room Monitor Button */}
+        <a
+          href={window.location.hostname === 'localhost' ? `http://localhost:5000/monitor?roomId=${roomId}` : `https://meetgold.onrender.com/monitor?roomId=${roomId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden sm:flex items-center space-x-1.5 text-xs bg-navy-900 hover:bg-navy-850 text-sky-400 hover:text-sky-300 font-semibold px-2.5 py-1.5 rounded-xl border border-navy-700/80 transition shadow-sm"
+          title="Mở giao diện giám sát Server (Room Monitor)"
+        >
+          <Activity size={13} className="text-sky-400" />
+          <span>Monitor</span>
+        </a>
 
         {/* End / Leave Meeting Action */}
         <button

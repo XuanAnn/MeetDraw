@@ -37,8 +37,14 @@ class SignalingService {
   public currentRoomId: string | null = null;
 
   constructor() {
+    const isLocal =
+      typeof window !== 'undefined' &&
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
     if (import.meta.env.VITE_SIGNALING_URL) {
       this.url = import.meta.env.VITE_SIGNALING_URL;
+    } else if (isLocal) {
+      this.url = 'ws://localhost:5000/signaling';
     } else {
       this.url = 'wss://meetgold.onrender.com/signaling';
     }
@@ -250,6 +256,16 @@ class SignalingService {
       roomId,
       senderId: this.selfPeerId,
       payload: { peerId: this.selfPeerId, volume },
+    });
+  }
+
+  sendTelemetry(roomId: string, payload: any) {
+    if (!this.selfPeerId) return;
+    this.send({
+      type: 'TELEMETRY_REPORT',
+      roomId,
+      senderId: this.selfPeerId,
+      payload,
     });
   }
 

@@ -8,7 +8,12 @@ import {
   User,
 } from '@meetdraw/shared';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://meetgold.onrender.com/api';
+const isLocal =
+  typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+const API_BASE =
+  import.meta.env.VITE_API_URL || (isLocal ? 'http://localhost:5000/api' : 'https://meetgold.onrender.com/api');
 
 class ApiService {
   private token: string | null = null;

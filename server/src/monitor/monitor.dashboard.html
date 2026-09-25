@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MeetDraw - Room Monitor (Admin Server Dashboard)</title>
+  <!-- Tailwind CSS CDN for instant, build-free styling on Render -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: {
+              950: '#070b13',
+              900: '#0c1322',
+              850: '#111a2f',
+              800: '#17233f',
+              700: '#23345d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @keyframes pulse-fast {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .animate-pulse-fast {
+      animation: pulse-fast 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0c1322;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #23345d;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #38bdf8;
+    }
+  </style>
+</head>
+<body class="bg-navy-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- TOP HEADER -->
+  <header class="bg-navy-900/90 backdrop-blur-md border-b border-navy-800 sticky top-0 z-50 px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center space-x-3.5">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-sky-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-black text-xl tracking-wider">
+        M
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <h1 class="text-base font-bold text-white tracking-wide">MEETDRAW ROOM MONITOR</h1>
+          <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">Server Admin</span>
+        </div>
+        <p class="text-xs text-slate-400">Giám sát phòng họp, mạng WebRTC/ICE, Media Sharing và Whiteboard</p>
+      </div>
+    </div>
+
+    <!-- ROOM SELECTOR & CONTROLS -->
+    <div class="flex items-center space-x-3">
+      <div class="flex items-center space-x-2 bg-navy-850 px-3 py-1.5 rounded-xl border border-navy-700/80">
+        <label for="roomSelect" class="text-xs font-semibold text-slate-400">Phòng:</label>
+        <select id="roomSelect" onchange="onRoomChange(this.value)" class="bg-navy-900 text-sky-400 text-xs font-mono font-bold py-1 px-2.5 rounded-lg border border-navy-700 focus:outline-none focus:border-sky-500">
+          <option value="">Đang tải danh sách phòng...</option>
+        </select>
+        <div class="h-4 w-[1px] bg-navy-700 mx-1"></div>
+        <input type="text" id="manualRoomInput" placeholder="Mã phòng..." onkeydown="if(event.key==='Enter') applyManualRoom()" class="bg-navy-900 text-sky-400 text-xs font-mono py-1 px-2 rounded-lg border border-navy-700 w-28 focus:outline-none focus:border-sky-500 placeholder:text-slate-600">
+        <button onclick="applyManualRoom()" class="px-2 py-1 text-[11px] font-bold bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600 hover:text-white rounded border border-indigo-500/40 transition">Xem</button>
+        <button onclick="refreshManual()" title="Làm mới ngay" class="p-1 text-slate-400 hover:text-white hover:bg-navy-700 rounded transition ml-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        </button>
+      </div>
+
+      <div class="flex items-center space-x-2 bg-navy-850 px-3 py-1.5 rounded-xl border border-navy-700/80 text-xs">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse-fast"></span>
+        <span class="text-slate-300 font-medium">Realtime:</span>
+        <select id="refreshRate" onchange="changeRefreshRate(this.value)" class="bg-navy-900 text-slate-200 text-xs font-semibold py-1 px-2 rounded-lg border border-navy-700">
+          <option value="1000">1s</option>
+          <option value="2000" selected>2s</option>
+          <option value="5000">5s</option>
+          <option value="0">Tắt</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+
+    <!-- SECTION 3: ROOM OVERVIEW KPIS -->
+    <div id="overviewCards" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+      <!-- Card 1: Room ID -->
+      <div class="bg-navy-900 p-3.5 rounded-2xl border border-navy-800 shadow-md">
+        <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Room Code</div>
+        <div id="kpiRoomId" class="text-base font-black text-sky-400 font-mono mt-1">--</div>
+        <div id="kpiStatusBadge" class="mt-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">WAITING</div>
+      </div>
+
+      <!-- Card 2: Manage (Đổi từ Host thành Manage) -->
+      <div class="bg-navy-900 p-3.5 rounded-2xl border border-navy-800 shadow-md">
+        <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Manage</div>
+        <div id="kpiManage" class="text-sm font-bold text-amber-300 mt-1 truncate" title="Quản lý phòng">--</div>
+        <div class="text-[10px] text-slate-500 mt-1">Quản lý phòng</div>
+      </div>
+
+      <!-- Card 3: Duration -->
+      <div class="bg-navy-900 p-3.5 rounded-2xl border border-navy-800 shadow-md">
+        <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Thời gian</div>
+        <div id="kpiDuration" class="text-sm font-mono font-bold text-white mt-1">00:00:00</div>
+        <div class="text-[10px] text-slate-500 mt-1">Đang hoạt động</div>
+      </div>
+
+      <!-- Card 4: Users Online / Total -->
+      <div class="bg-navy-900 p-3.5 rounded-2xl border border-navy-800 shadow-md">
+        <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Users Online</div>
+        <div class="text-sm font-bold text-emerald-400 mt-1">
+          <span id="kpiOnlineUsers" class="text-base font-black">0</span>
+          <span id="kpiTotalUsers" class="text-slate-500 font-normal text-xs">/ 0</span>
+        </div>
+        <div class="text-[10px] text-slate-500 mt-1">Người trong phòng</div>
+      </div>
+
+      <!-- Card 5: WebRTC Connections -->
+      <div class="bg-navy-900 p-3.5 rounded-2xl border border-navy-800 shadow-md">
+        <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">WebRTC Mesh</div>
+        <div id="kpiConnections" class="text-base font-black text-indigo-400 mt-1">0</div>
+        <div class="text-[10px] text-slate-500 mt-1">P2P Pair kết nối</div>
+      </div>
+
+      <!-- Card 6: Screen Share -->
+      <div class="bg-navy-900 p-3.5 rounded-2xl border border-navy-800 shadow-md">
+        <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Screen Share</div>
+        <div id="kpiScreenShare" class="text-base font-black text-rose-400 mt-1">0</div>
+        <div class="text-[10px] text-slate-500 mt-1">Luồng màn hình</div>
+      </div>
+
+      <!-- Card 7: Whiteboard Objects -->
+      <div class="bg-navy-900 p-3.5 rounded-2xl border border-navy-800 shadow-md">
+        <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Bản vẽ Objects</div>
+        <div id="kpiWhiteboardCount" class="text-base font-black text-amber-400 mt-1">0</div>
+        <div class="text-[10px] text-slate-500 mt-1">Đối tượng hiện tại</div>
+      </div>
+
+      <!-- Card 8: ICE Candidates -->
+      <div class="bg-navy-900 p-3.5 rounded-2xl border border-navy-800 shadow-md">
+        <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Candidates</div>
+        <div id="kpiCandidatesCount" class="text-base font-black text-cyan-400 mt-1">0</div>
+        <div class="text-[10px] text-slate-500 mt-1">Host/STUN/TURN</div>
+      </div>
+    </div>
+
+    <!-- NAVIGATION TABS -->
+    <div class="flex items-center space-x-1 border-b border-navy-800 overflow-x-auto pb-1 text-sm font-semibold select-none">
+      <button onclick="switchTab('users')" id="tabBtn-users" class="tab-btn px-4 py-2 rounded-xl transition flex items-center space-x-2 text-white bg-indigo-600/30 border border-indigo-500/40">
+        <span>👥</span><span>Người dùng (Users)</span>
+        <span id="badgeUsers" class="px-1.5 py-0.2 rounded-full text-[10px] bg-indigo-500/40 font-mono">0</span>
+      </button>
+
+      <button onclick="switchTab('connections')" id="tabBtn-connections" class="tab-btn px-4 py-2 rounded-xl transition flex items-center space-x-2 text-slate-400 hover:text-white hover:bg-navy-900">
+        <span>🌐</span><span>WebRTC Mesh</span>
+        <span id="badgeConnections" class="px-1.5 py-0.2 rounded-full text-[10px] bg-navy-800 font-mono">0</span>
+      </button>
+
+      <button onclick="switchTab('ice')" id="tabBtn-ice" class="tab-btn px-4 py-2 rounded-xl transition flex items-center space-x-2 text-slate-400 hover:text-white hover:bg-navy-900">
+        <span>🧊</span><span>ICE & Candidate Pair</span>
+      </button>
+
+      <button onclick="switchTab('media')" id="tabBtn-media" class="tab-btn px-4 py-2 rounded-xl transition flex items-center space-x-2 text-slate-400 hover:text-white hover:bg-navy-900">
+        <span>🎥</span><span>Media Sharing</span>
+      </button>
+
+      <button onclick="switchTab('whiteboard')" id="tabBtn-whiteboard" class="tab-btn px-4 py-2 rounded-xl transition flex items-center space-x-2 text-slate-400 hover:text-white hover:bg-navy-900">
+        <span>🎨</span><span>Whiteboard Activity</span>
+        <span id="badgeWhiteboard" class="px-1.5 py-0.2 rounded-full text-[10px] bg-navy-800 font-mono">0</span>
+      </button>
+
+      <button onclick="switchTab('timeline')" id="tabBtn-timeline" class="tab-btn px-4 py-2 rounded-xl transition flex items-center space-x-2 text-slate-400 hover:text-white hover:bg-navy-900">
+        <span>⏱️</span><span>Activity Timeline</span>
+        <span id="badgeTimeline" class="px-1.5 py-0.2 rounded-full text-[10px] bg-navy-800 font-mono">0</span>
+      </button>
+    </div>
+
+    <!-- TAB 1: USERS TAB (Section 4 & 5 & 6) -->
+    <div id="tabContent-users" class="tab-content space-y-4">
+      <div class="bg-navy-900 rounded-2xl border border-navy-800 overflow-hidden shadow-xl">
+        <div class="p-4 border-b border-navy-800 flex items-center justify-between">
+          <h2 class="text-sm font-bold text-white flex items-center space-x-2">
+            <span>Danh sách người dùng trong phòng</span>
+            <span class="text-xs font-normal text-slate-400">(Bao gồm IP/Port kết nối trực tiếp đến Server)</span>
+          </h2>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-navy-950/80 text-slate-400 uppercase font-mono text-[11px] border-b border-navy-800">
+              <tr>
+                <th class="px-4 py-3">User</th>
+                <th class="px-4 py-3">Vai trò</th>
+                <th class="px-4 py-3">Socket ID</th>
+                <th class="px-4 py-3">Server IP (Quan sát)</th>
+                <th class="px-4 py-3">Server Port</th>
+                <th class="px-4 py-3">Trạng thái</th>
+                <th class="px-4 py-3">Vào lúc (Joined)</th>
+                <th class="px-4 py-3">Rời lúc (Left)</th>
+                <th class="px-4 py-3 text-center">Media Status</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody" class="divide-y divide-navy-800 font-sans">
+              <tr><td colspan="9" class="p-8 text-center text-slate-500">Chưa có người dùng nào</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: WEBRTC MESH CONNECTIONS (Section 7) -->
+    <div id="tabContent-connections" class="tab-content hidden space-y-4">
+      <div class="bg-navy-900 rounded-2xl border border-navy-800 overflow-hidden shadow-xl">
+        <div class="p-4 border-b border-navy-800 flex items-center justify-between">
+          <h2 class="text-sm font-bold text-white">Kết nối P2P WebRTC giữa các Peer (Mesh Topology)</h2>
+          <span class="text-xs text-slate-400">Mỗi cặp user tạo thành một RTCPeerConnection riêng biệt</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-navy-950/80 text-slate-400 uppercase font-mono text-[11px] border-b border-navy-800">
+              <tr>
+                <th class="px-4 py-3">Cặp kết nối (Peer A ↔ Peer B)</th>
+                <th class="px-4 py-3">Connection State</th>
+                <th class="px-4 py-3">ICE State</th>
+                <th class="px-4 py-3">Signaling State</th>
+                <th class="px-4 py-3">Selected Candidate Pair (Đường truyền)</th>
+                <th class="px-4 py-3">RTT Latency</th>
+                <th class="px-4 py-3">Khởi tạo lúc</th>
+              </tr>
+            </thead>
+            <tbody id="connectionsTableBody" class="divide-y divide-navy-800">
+              <tr><td colspan="7" class="p-8 text-center text-slate-500">Chưa có kết nối WebRTC nào</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: ICE & CANDIDATE MONITOR (Section 8, 9, 10) -->
+    <div id="tabContent-ice" class="tab-content hidden space-y-6">
+      <!-- Diagnostic Box: Selected Candidate Pair -->
+      <div class="bg-gradient-to-r from-navy-900 via-navy-850 to-navy-900 p-5 rounded-2xl border border-sky-500/30 shadow-xl space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2.5">
+            <span class="text-xl">⚡</span>
+            <div>
+              <h3 class="text-sm font-bold text-white uppercase tracking-wider">Selected Candidate Pair Đang Truyền Media</h3>
+              <p class="text-xs text-slate-400">Đường truyền mạng thực tế đang được WebRTC sử dụng (Nominated = true)</p>
+            </div>
+          </div>
+          <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30">Active Route</span>
+        </div>
+
+        <div id="selectedCandidatePairContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+          <div class="p-4 rounded-xl bg-navy-950/70 border border-navy-800">
+            <div class="text-slate-400 font-medium">Local Candidate</div>
+            <div id="selLocalCand" class="font-mono font-bold text-sky-300 mt-1">Đang chờ kết nối...</div>
+          </div>
+          <div class="p-4 rounded-xl bg-navy-950/70 border border-navy-800">
+            <div class="text-slate-400 font-medium">Remote Candidate</div>
+            <div id="selRemoteCand" class="font-mono font-bold text-emerald-300 mt-1">Đang chờ kết nối...</div>
+          </div>
+          <div class="p-4 rounded-xl bg-navy-950/70 border border-navy-800">
+            <div class="text-slate-400 font-medium">Giao thức & Trạng thái</div>
+            <div id="selProtocolState" class="font-mono font-bold text-white mt-1">--</div>
+          </div>
+          <div class="p-4 rounded-xl bg-navy-950/70 border border-navy-800">
+            <div class="text-slate-400 font-medium">Độ trễ RTT & Dữ liệu</div>
+            <div id="selRttBytes" class="font-mono font-bold text-amber-300 mt-1">--</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Candidate Table (Section 9) -->
+      <div class="bg-navy-900 rounded-2xl border border-navy-800 overflow-hidden shadow-xl">
+        <div class="p-4 border-b border-navy-800 flex items-center justify-between">
+          <h2 class="text-sm font-bold text-white">Toàn bộ ICE Candidates được tạo (Host / srflx STUN / relay TURN)</h2>
+          <span class="text-xs text-slate-400 font-mono">Bóc tách tự động từ bản tin ICE_CANDIDATE</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-navy-950/80 text-slate-400 uppercase font-mono text-[11px] border-b border-navy-800">
+              <tr>
+                <th class="px-4 py-3">Peer</th>
+                <th class="px-4 py-3">Loại (Type)</th>
+                <th class="px-4 py-3">IP Address</th>
+                <th class="px-4 py-3">Port</th>
+                <th class="px-4 py-3">Protocol</th>
+                <th class="px-4 py-3">Priority</th>
+                <th class="px-4 py-3">SDP Mid</th>
+                <th class="px-4 py-3">SDP M-Line Index</th>
+              </tr>
+            </thead>
+            <tbody id="candidatesTableBody" class="divide-y divide-navy-800 font-mono">
+              <tr><td colspan="8" class="p-8 text-center text-slate-500 font-sans">Chưa phát hiện ICE candidate nào</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: MEDIA SHARING & HISTORY (Section 11 & 12) -->
+    <div id="tabContent-media" class="tab-content hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Current Media State Table (Section 11) -->
+        <div class="lg:col-span-1 bg-navy-900 rounded-2xl border border-navy-800 p-4 shadow-xl space-y-4">
+          <h2 class="text-sm font-bold text-white flex items-center space-x-2">
+            <span>Trạng thái Media hiện tại</span>
+          </h2>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-navy-950/80 text-slate-400 uppercase font-mono text-[10px]">
+                <tr>
+                  <th class="px-3 py-2.5">User</th>
+                  <th class="px-2 py-2.5 text-center">Mic</th>
+                  <th class="px-2 py-2.5 text-center">Camera</th>
+                  <th class="px-2 py-2.5 text-center">Screen</th>
+                </tr>
+              </thead>
+              <tbody id="currentMediaTableBody" class="divide-y divide-navy-800">
+                <tr><td colspan="4" class="p-4 text-center text-slate-500">Chưa có dữ liệu</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Sharing History (Section 12) -->
+        <div class="lg:col-span-2 bg-navy-900 rounded-2xl border border-navy-800 p-4 shadow-xl space-y-4">
+          <h2 class="text-sm font-bold text-white flex items-center justify-between">
+            <span>Lịch sử chia sẻ (Sharing History)</span>
+            <span class="text-xs text-slate-500 font-normal">Ghi nhận mốc thời gian bật/tắt</span>
+          </h2>
+
+          <div class="overflow-y-auto max-h-96 pr-2">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-navy-950/80 text-slate-400 uppercase font-mono text-[10px] sticky top-0">
+                <tr>
+                  <th class="px-3 py-2">Thời điểm</th>
+                  <th class="px-3 py-2">Người thực hiện</th>
+                  <th class="px-3 py-2">Loại Media</th>
+                  <th class="px-3 py-2">Hành động</th>
+                </tr>
+              </thead>
+              <tbody id="mediaHistoryTableBody" class="divide-y divide-navy-800">
+                <tr><td colspan="4" class="p-6 text-center text-slate-500">Chưa có sự kiện media nào</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: WHITEBOARD ACTIVITY (Section 13, 14, 15) -->
+    <div id="tabContent-whiteboard" class="tab-content hidden space-y-6">
+      <div class="bg-navy-900 rounded-2xl border border-navy-800 overflow-hidden shadow-xl">
+        <div class="p-4 border-b border-navy-800 flex items-center justify-between">
+          <div>
+            <h2 class="text-sm font-bold text-white">Đối tượng trên bảng vẽ (Whiteboard Objects)</h2>
+            <p class="text-xs text-slate-400 mt-0.5">Xác định ai tạo, sửa hoặc xóa từng đối tượng với kích thước và tọa độ</p>
+          </div>
+          <span id="whiteboardCountTag" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">0 objects</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-navy-950/80 text-slate-400 uppercase font-mono text-[11px] border-b border-navy-800">
+              <tr>
+                <th class="px-4 py-3">Object ID</th>
+                <th class="px-4 py-3">Loại đối tượng</th>
+                <th class="px-4 py-3">Người tạo (Created By)</th>
+                <th class="px-4 py-3">Tọa độ (X, Y)</th>
+                <th class="px-4 py-3">Kích thước (W × H)</th>
+                <th class="px-4 py-3">Khởi tạo lúc</th>
+                <th class="px-4 py-3">Cập nhật gần nhất</th>
+                <th class="px-4 py-3">Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody id="whiteboardTableBody" class="divide-y divide-navy-800 font-sans">
+              <tr><td colspan="8" class="p-8 text-center text-slate-500">Bảng vẽ chưa có đối tượng nào</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: ROOM ACTIVITY TIMELINE (Section 16 & 17) -->
+    <div id="tabContent-timeline" class="tab-content hidden space-y-4">
+      <div class="bg-navy-900 rounded-2xl border border-navy-800 p-5 shadow-xl space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-navy-800 pb-4">
+          <div>
+            <h2 class="text-sm font-bold text-white">Dòng thời gian sự kiện phòng (Room Activity Timeline)</h2>
+            <p class="text-xs text-slate-400 mt-0.5">Theo dõi thứ tự thời gian của tất cả sự kiện (User, WebRTC, Media, Whiteboard)</p>
+          </div>
+
+          <!-- Timeline Filters -->
+          <div class="flex items-center space-x-2">
+            <select id="timelineCategoryFilter" onchange="renderTimeline()" class="bg-navy-950 text-xs text-slate-300 py-1.5 px-3 rounded-xl border border-navy-700">
+              <option value="ALL">Tất cả danh mục</option>
+              <option value="ROOM">Room</option>
+              <option value="USER">User (Join/Leave)</option>
+              <option value="WEBRTC">WebRTC</option>
+              <option value="ICE">ICE & Candidate</option>
+              <option value="MEDIA">Camera & Mic</option>
+              <option value="SCREEN">Screen Share</option>
+              <option value="WHITEBOARD">Whiteboard</option>
+            </select>
+
+            <input type="text" id="timelineSearch" oninput="renderTimeline()" placeholder="Tìm kiếm sự kiện..." class="bg-navy-950 text-xs text-white py-1.5 px-3 rounded-xl border border-navy-700 focus:outline-none focus:border-indigo-500 w-44">
+          </div>
+        </div>
+
+        <!-- Timeline Items List -->
+        <div id="timelineContainer" class="space-y-2.5 max-h-[600px] overflow-y-auto pr-2">
+          <div class="p-8 text-center text-slate-500 text-xs">Chưa có sự kiện nào trong timeline</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="mt-auto border-t border-navy-900 py-3 text-center text-xs text-slate-600 font-mono">
+    MeetDraw Room Monitor © 2026 • Server-Side Realtime Telemetry Engine • WebRTC Mesh Diagnostics
+  </footer>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    let currentRoomId = '';
+    let refreshInterval = 2000;
+    let timerId = null;
+    let currentSnapshot = null;
+    let activeTab = 'users';
+
+    // Format helpers
+    function formatTime(ts) {
+      if (!ts) return '--';
+      return new Date(ts).toLocaleTimeString('vi-VN', { hour12: false });
+    }
+
+    function formatDuration(sec) {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    // Switch Tab
+    function switchTab(tabId) {
+      activeTab = tabId;
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('text-white', 'bg-indigo-600/30', 'border', 'border-indigo-500/40');
+        btn.classList.add('text-slate-400', 'hover:text-white', 'hover:bg-navy-900');
+      });
+      const activeBtn = document.getElementById(`tabBtn-${tabId}`);
+      if (activeBtn) {
+        activeBtn.classList.add('text-white', 'bg-indigo-600/30', 'border', 'border-indigo-500/40');
+        activeBtn.classList.remove('text-slate-400', 'hover:bg-navy-900');
+      }
+
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+      const activeContent = document.getElementById(`tabContent-${tabId}`);
+      if (activeContent) {
+        activeContent.classList.remove('hidden');
+      }
+    }
+
+    // Fetch list of rooms
+    async function loadRoomsList() {
+      try {
+        const res = await fetch('/api/monitor/rooms');
+        if (!res.ok) return;
+        const rooms = await res.json();
+        const select = document.getElementById('roomSelect');
+
+        if (rooms.length === 0) {
+          if (!currentRoomId) {
+            select.innerHTML = '<option value="">(Không có phòng nào đang mở)</option>';
+          }
+          return;
+        }
+
+        const prevRoom = currentRoomId;
+        select.innerHTML = rooms.map(r => `
+          <option value="${r.roomId}" ${r.roomId === prevRoom ? 'selected' : ''}>
+            ${r.roomId} [${r.status}] - Manage: ${r.manage} (${r.onlineUsers} online)
+          </option>
+        `).join('');
+
+        const hadRoom = currentRoomId && rooms.some(r => r.roomId === currentRoomId);
+        if (!hadRoom) {
+          currentRoomId = rooms[0].roomId;
+          select.value = currentRoomId;
+          const input = document.getElementById('manualRoomInput');
+          if (input && !input.value) input.value = currentRoomId;
+          fetchRoomSnapshot();
+        }
+      } catch (err) {
+        console.error('Lỗi tải danh sách phòng:', err);
+      }
+    }
+
+    // Fetch snapshot of active room
+    async function fetchRoomSnapshot() {
+      if (!currentRoomId) return;
+      try {
+        const res = await fetch(`/api/monitor/rooms/${currentRoomId}`);
+        if (!res.ok) return;
+        currentSnapshot = await res.json();
+        renderSnapshot(currentSnapshot);
+      } catch (err) {
+        console.warn('Lỗi lấy snapshot:', err);
+      }
+    }
+
+    function onRoomChange(roomId) {
+      currentRoomId = roomId;
+      const input = document.getElementById('manualRoomInput');
+      if (input) input.value = roomId;
+      fetchRoomSnapshot();
+    }
+
+    function applyManualRoom() {
+      const input = document.getElementById('manualRoomInput');
+      const rId = input ? input.value.trim() : '';
+      if (!rId) return;
+      currentRoomId = rId;
+      fetchRoomSnapshot();
+    }
+
+    function refreshManual() {
+      loadRoomsList().then(() => {
+        fetchRoomSnapshot();
+      });
+    }
+
+    function changeRefreshRate(val) {
+      refreshInterval = parseInt(val, 10);
+      clearInterval(timerId);
+      if (refreshInterval > 0) {
+        timerId = setInterval(async () => {
+          await loadRoomsList();
+          await fetchRoomSnapshot();
+        }, refreshInterval);
+      }
+    }
+
+    // RENDER SNAPSHOT TO UI
+    function renderSnapshot(data) {
+      if (!data || !data.overview) return;
+
+      const { overview, users, connections, candidates, mediaHistory, whiteboardObjects, timeline } = data;
+
+      // 1. KPIs
+      document.getElementById('kpiRoomId').textContent = overview.roomId || '--';
+      document.getElementById('kpiManage').textContent = overview.manage || 'Chưa xác định';
+      document.getElementById('kpiDuration').textContent = formatDuration(overview.duration || 0);
+      document.getElementById('kpiOnlineUsers').textContent = overview.onlineUsers || 0;
+      document.getElementById('kpiTotalUsers').textContent = `/ ${overview.totalUsers || 0}`;
+      document.getElementById('kpiConnections').textContent = overview.activeConnections || 0;
+      document.getElementById('kpiScreenShare').textContent = overview.activeScreenShares || 0;
+      document.getElementById('kpiWhiteboardCount').textContent = overview.whiteboardObjectsCount || 0;
+      document.getElementById('kpiCandidatesCount').textContent = candidates.length || 0;
+
+      const badge = document.getElementById('kpiStatusBadge');
+      if (overview.status === 'LIVE') {
+        badge.className = 'mt-1.5 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+        badge.textContent = '🟢 LIVE';
+      } else {
+        badge.className = 'mt-1.5 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400';
+        badge.textContent = 'ENDED';
+      }
+
+      // Tab badges
+      document.getElementById('badgeUsers').textContent = users.length;
+      document.getElementById('badgeConnections').textContent = connections.length;
+      document.getElementById('badgeWhiteboard').textContent = whiteboardObjects.filter(o => o.status === 'ACTIVE').length;
+      document.getElementById('badgeTimeline').textContent = timeline.length;
+      document.getElementById('whiteboardCountTag').textContent = `${whiteboardObjects.filter(o => o.status === 'ACTIVE').length} objects`;
+
+      // 2. Render Users Table
+      renderUsersTable(users);
+
+      // 3. Render Connections Table
+      renderConnectionsTable(connections);
+
+      // 4. Render Candidates & Selected Candidate Pair
+      renderIceTable(candidates, connections);
+
+      // 5. Render Media Table & History
+      renderMedia(users, mediaHistory);
+
+      // 6. Render Whiteboard Table
+      renderWhiteboard(whiteboardObjects);
+
+      // 7. Render Timeline
+      renderTimeline();
+    }
+
+    function renderUsersTable(users) {
+      const tbody = document.getElementById('usersTableBody');
+      if (!users || users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="p-8 text-center text-slate-500">Chưa có người dùng nào</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = users.map(u => `
+        <tr class="hover:bg-navy-850/60 transition">
+          <td class="px-4 py-3 font-semibold text-white flex items-center space-x-2">
+            <span class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-300 font-bold flex items-center justify-center text-[11px] border border-indigo-500/30">
+              ${u.username ? u.username.charAt(0).toUpperCase() : 'U'}
+            </span>
+            <span>${u.username}</span>
+          </td>
+          <td class="px-4 py-3">
+            ${u.isManage
+              ? '<span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30">👑 Manage</span>'
+              : '<span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400">Thành viên</span>'}
+          </td>
+          <td class="px-4 py-3 font-mono text-slate-400 text-[11px]">${u.peerId.substring(0, 8)}...</td>
+          <td class="px-4 py-3 font-mono text-sky-400 font-bold">${u.ip}</td>
+          <td class="px-4 py-3 font-mono text-slate-300">${u.port}</td>
+          <td class="px-4 py-3">
+            ${u.status === 'ONLINE'
+              ? '<span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span><span>ONLINE</span></span>'
+              : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400">LEFT</span>'}
+          </td>
+          <td class="px-4 py-3 text-slate-400 font-mono">${formatTime(u.joinedAt)}</td>
+          <td class="px-4 py-3 text-slate-400 font-mono">${formatTime(u.leftAt)}</td>
+          <td class="px-4 py-3">
+            <div class="flex items-center justify-center space-x-1.5">
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${u.isMicOn ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-400'}">Mic: ${u.isMicOn ? 'ON' : 'OFF'}</span>
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${u.isCamOn ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-400'}">Cam: ${u.isCamOn ? 'ON' : 'OFF'}</span>
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${u.isScreenSharing ? 'bg-indigo-500/30 text-indigo-300 animate-pulse' : 'bg-slate-800 text-slate-500'}">Screen</span>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderConnectionsTable(connections) {
+      const tbody = document.getElementById('connectionsTableBody');
+      if (!connections || connections.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-slate-500">Chưa có kết nối WebRTC nào</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = connections.map(c => `
+        <tr class="hover:bg-navy-850/60 transition">
+          <td class="px-4 py-3 font-semibold text-white">
+            <div class="flex items-center space-x-1.5">
+              <span class="text-indigo-400 font-bold">${c.peerA.username}</span>
+              <span class="text-slate-500">↔</span>
+              <span class="text-sky-400 font-bold">${c.peerB.username}</span>
+            </div>
+          </td>
+          <td class="px-4 py-3 font-mono">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${c.connectionState === 'connected' ? 'bg-emerald-500/20 text-emerald-400' : c.connectionState === 'closed' || c.connectionState === 'failed' ? 'bg-rose-500/20 text-rose-400' : 'bg-amber-500/20 text-amber-400'}">
+              ${c.connectionState.toUpperCase()}
+            </span>
+          </td>
+          <td class="px-4 py-3 font-mono text-slate-300 text-[11px]">${c.iceState}</td>
+          <td class="px-4 py-3 font-mono text-slate-400 text-[11px]">${c.signalingState}</td>
+          <td class="px-4 py-3 font-mono text-xs">
+            ${c.selectedCandidatePair
+              ? `<span class="text-sky-300 font-bold">${c.selectedCandidatePair.localCandidateType}</span> <span class="text-slate-500">→</span> <span class="text-emerald-300 font-bold">${c.selectedCandidatePair.remoteCandidateType}</span> <span class="text-slate-400">(${c.selectedCandidatePair.protocol.toUpperCase()})</span>`
+              : '<span class="text-slate-500">Chưa xác định</span>'}
+          </td>
+          <td class="px-4 py-3 font-mono font-bold text-amber-300">
+            ${c.selectedCandidatePair?.rtt !== undefined ? `${c.selectedCandidatePair.rtt} ms` : '--'}
+          </td>
+          <td class="px-4 py-3 font-mono text-slate-400">${formatTime(c.createdAt)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderIceTable(candidates, connections) {
+      // 1. Candidate Table
+      const tbody = document.getElementById('candidatesTableBody');
+      if (!candidates || candidates.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-500 font-sans">Chưa phát hiện ICE candidate nào</td></tr>';
+      } else {
+        tbody.innerHTML = candidates.map(c => `
+          <tr class="hover:bg-navy-850/60 transition text-slate-300">
+            <td class="px-4 py-2.5 font-sans font-semibold text-white">${c.peerId.substring(0, 6)}...</td>
+            <td class="px-4 py-2.5">
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${c.type === 'host' ? 'bg-indigo-500/20 text-indigo-300' : c.type === 'srflx' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}">
+                ${c.type.toUpperCase()}
+              </span>
+            </td>
+            <td class="px-4 py-2.5 text-sky-400 font-bold">${c.ip}</td>
+            <td class="px-4 py-2.5 text-slate-200">${c.port}</td>
+            <td class="px-4 py-2.5 uppercase font-bold text-slate-400">${c.protocol}</td>
+            <td class="px-4 py-2.5 text-slate-400">${c.priority}</td>
+            <td class="px-4 py-2.5 text-slate-400">${c.sdpMid || '--'}</td>
+            <td class="px-4 py-2.5 text-slate-400">${c.sdpMLineIndex !== null ? c.sdpMLineIndex : '--'}</td>
+          </tr>
+        `).join('');
+      }
+
+      // 2. Selected Candidate Pair Box
+      const activeConnWithPair = connections?.find(c => c.selectedCandidatePair);
+      if (activeConnWithPair && activeConnWithPair.selectedCandidatePair) {
+        const pair = activeConnWithPair.selectedCandidatePair;
+        document.getElementById('selLocalCand').textContent = `${pair.localCandidateType.toUpperCase()} (${pair.localIp}:${pair.localPort})`;
+        document.getElementById('selRemoteCand').textContent = `${pair.remoteCandidateType.toUpperCase()} (${pair.remoteIp}:${pair.remotePort})`;
+        document.getElementById('selProtocolState').textContent = `${pair.protocol.toUpperCase()} • ${pair.state.toUpperCase()} • Nominated: ${pair.nominated}`;
+        document.getElementById('selRttBytes').textContent = `RTT: ${pair.rtt || 0}ms • Bytes: ↑${pair.bytesSent || 0} / ↓${pair.bytesReceived || 0}`;
+      } else {
+        document.getElementById('selLocalCand').textContent = 'Đang đàm phán candidate...';
+        document.getElementById('selRemoteCand').textContent = 'Đang đàm phán candidate...';
+        document.getElementById('selProtocolState').textContent = 'WebRTC Checking';
+        document.getElementById('selRttBytes').textContent = '--';
+      }
+    }
+
+    function renderMedia(users, mediaHistory) {
+      // Current table
+      const curTbody = document.getElementById('currentMediaTableBody');
+      if (!users || users.length === 0) {
+        curTbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">Chưa có dữ liệu</td></tr>';
+      } else {
+        curTbody.innerHTML = users.map(u => `
+          <tr class="hover:bg-navy-850/60 transition">
+            <td class="px-3 py-2 font-semibold text-white">${u.username}</td>
+            <td class="px-2 py-2 text-center">
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${u.isMicOn ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}">${u.isMicOn ? 'ON' : 'OFF'}</span>
+            </td>
+            <td class="px-2 py-2 text-center">
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${u.isCamOn ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}">${u.isCamOn ? 'ON' : 'OFF'}</span>
+            </td>
+            <td class="px-2 py-2 text-center">
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${u.isScreenSharing ? 'bg-indigo-500/30 text-indigo-300 animate-pulse' : 'bg-slate-800 text-slate-500'}">${u.isScreenSharing ? 'SHARING' : 'OFF'}</span>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      // History table
+      const histTbody = document.getElementById('mediaHistoryTableBody');
+      if (!mediaHistory || mediaHistory.length === 0) {
+        histTbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-500">Chưa có sự kiện media nào</td></tr>';
+      } else {
+        histTbody.innerHTML = mediaHistory.map(m => `
+          <tr class="hover:bg-navy-850/60 transition text-slate-300">
+            <td class="px-3 py-2 font-mono text-slate-400">${formatTime(m.timestamp)}</td>
+            <td class="px-3 py-2 font-semibold text-white">${m.username}</td>
+            <td class="px-3 py-2 font-mono font-bold text-sky-400">${m.mediaType}</td>
+            <td class="px-3 py-2">
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${m.action === 'STARTED' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}">
+                ${m.action}
+              </span>
+            </td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    function renderWhiteboard(objects) {
+      const tbody = document.getElementById('whiteboardTableBody');
+      if (!objects || objects.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-500">Bảng vẽ chưa có đối tượng nào</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = objects.map(o => `
+        <tr class="hover:bg-navy-850/60 transition text-slate-300">
+          <td class="px-4 py-3 font-mono font-bold text-amber-300">#${o.id.substring(0, 8)}</td>
+          <td class="px-4 py-3 font-semibold text-white">${o.type}</td>
+          <td class="px-4 py-3 font-medium text-sky-400">${o.createdBy}</td>
+          <td class="px-4 py-3 font-mono text-slate-400">X: ${o.position.x}, Y: ${o.position.y}</td>
+          <td class="px-4 py-3 font-mono text-slate-400">${o.size.width} × ${o.size.height}</td>
+          <td class="px-4 py-3 font-mono text-slate-500">${formatTime(o.createdAt)}</td>
+          <td class="px-4 py-3 font-mono text-slate-500">${formatTime(o.updatedAt)}</td>
+          <td class="px-4 py-3">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${o.status === 'ACTIVE' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400 line-through'}">
+              ${o.status}
+            </span>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderTimeline() {
+      if (!currentSnapshot || !currentSnapshot.timeline) return;
+
+      const categoryFilter = document.getElementById('timelineCategoryFilter')?.value || 'ALL';
+      const searchText = (document.getElementById('timelineSearch')?.value || '').toLowerCase().trim();
+
+      const items = currentSnapshot.timeline.filter(ev => {
+        if (categoryFilter !== 'ALL' && ev.category !== categoryFilter) return false;
+        if (searchText) {
+          const matchTitle = ev.title?.toLowerCase().includes(searchText);
+          const matchDetails = ev.details?.toLowerCase().includes(searchText);
+          const matchUser = ev.username?.toLowerCase().includes(searchText);
+          if (!matchTitle && !matchDetails && !matchUser) return false;
+        }
+        return true;
+      });
+
+      const container = document.getElementById('timelineContainer');
+      if (items.length === 0) {
+        container.innerHTML = '<div class="p-8 text-center text-slate-500 text-xs">Không tìm thấy sự kiện phù hợp</div>';
+        return;
+      }
+
+      container.innerHTML = items.map(ev => {
+        return `
+          <div class="p-3 rounded-xl bg-navy-950/70 border border-navy-800 hover:border-navy-700 transition flex items-start space-x-3 text-xs">
+            <span class="text-base p-1.5 rounded-lg bg-navy-900 border border-navy-800 flex-shrink-0">${ev.icon}</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-white tracking-wide">${ev.title}</span>
+                <span class="font-mono text-[10px] text-slate-500">${formatTime(ev.timestamp)}</span>
+              </div>
+              ${ev.details ? `<p class="text-slate-400 text-[11px] mt-0.5">${ev.details}</p>` : ''}
+              <div class="mt-1 flex items-center space-x-2">
+                <span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase bg-navy-900 text-slate-400 border border-navy-800">${ev.category}</span>
+                ${ev.username ? `<span class="text-[10px] text-indigo-400 font-semibold">${ev.username}</span>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // INITIAL BOOTSTRAP
+    window.addEventListener('DOMContentLoaded', () => {
+      // Check query param e.g. ?roomId=quel-h4z7
+      const urlParams = new URLSearchParams(window.location.search);
+      const queryRoom = urlParams.get('roomId') || urlParams.get('room');
+      if (queryRoom) {
+        currentRoomId = queryRoom.trim();
+        const input = document.getElementById('manualRoomInput');
+        if (input) input.value = currentRoomId;
+      }
+
+      loadRoomsList().then(() => {
+        fetchRoomSnapshot();
+      });
+      changeRefreshRate(2000);
+    });
+  </script>
+</body>
+</html>

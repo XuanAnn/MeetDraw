@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { mediaStreamManager } from '../services/webrtc.service';
+import { signalingService } from '../services/signaling.service';
 import { LocalMediaState } from '../types';
 
 export function useMediaStream(autoStart = true) {
@@ -49,12 +50,30 @@ export function useMediaStream(autoStart = true) {
   const toggleAudio = useCallback(() => {
     const isUnmuted = mediaStreamManager.toggleAudio();
     setLocalState((prev) => ({ ...prev, isAudioMuted: !isUnmuted }));
-  }, []);
+    if (signalingService.currentRoomId) {
+      signalingService.sendTelemetry(signalingService.currentRoomId, {
+        mediaState: {
+          isMicOn: isUnmuted,
+          isCamOn: mediaStreamManager.isVideoEnabled(),
+          isScreenSharing: !!screenStream,
+        },
+      });
+    }
+  }, [screenStream]);
 
   const toggleVideo = useCallback(() => {
     const isEnabled = mediaStreamManager.toggleVideo();
     setLocalState((prev) => ({ ...prev, isVideoMuted: !isEnabled }));
-  }, []);
+    if (signalingService.currentRoomId) {
+      signalingService.sendTelemetry(signalingService.currentRoomId, {
+        mediaState: {
+          isMicOn: mediaStreamManager.isAudioEnabled(),
+          isCamOn: isEnabled,
+          isScreenSharing: !!screenStream,
+        },
+      });
+    }
+  }, [screenStream]);
 
   // Screen Share capability
   const startScreenShare = useCallback(async () => {

@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth.routes';
 import roomRoutes from './routes/room.routes';
+import monitorRoutes from './routes/monitor.routes';
 import { ENV } from './config/env';
 
 export const app = express();
@@ -24,6 +25,10 @@ app.get('/api/health', (req, res) => {
 // REST Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/rooms', roomRoutes);
+
+// Server-Hosted Room Monitor Dashboard & APIs
+app.use('/monitor', monitorRoutes);
+app.use('/api/monitor', monitorRoutes);
 
 // 404 Handler
 app.use('*', (req, res) => {

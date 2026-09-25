@@ -3,9 +3,11 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { v4 as uuidv4 } from 'uuid';
 import { SignalingHandler } from './signaling.handler';
 
-interface ExtWebSocket extends WebSocket {
+export interface ExtWebSocket extends WebSocket {
   isAlive?: boolean;
   peerId?: string;
+  clientIp?: string;
+  clientPort?: number;
 }
 
 export function initSignalingServer(httpServer: HttpServer): WebSocketServer {
@@ -15,7 +17,13 @@ export function initSignalingServer(httpServer: HttpServer): WebSocketServer {
     ws.isAlive = true;
     ws.peerId = uuidv4();
 
-    console.log(`[WebSocket] New client connected: ${ws.peerId} from ${req.socket.remoteAddress}`);
+    // Extract client IP and Port observed by server (supporting proxies / Render x-forwarded-for)
+    const forwarded = req.headers['x-forwarded-for'];
+    const remoteIp = (typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : req.socket.remoteAddress) || '127.0.0.1';
+    ws.clientIp = remoteIp.replace('::ffff:', '');
+    ws.clientPort = req.socket.remotePort || 0;
+
+    console.log(`[WebSocket] New client connected: ${ws.peerId} from ${ws.clientIp}:${ws.clientPort}`);
 
     ws.on('pong', () => {
       ws.isAlive = true;

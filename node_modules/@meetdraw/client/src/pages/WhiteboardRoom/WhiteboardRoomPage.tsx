@@ -135,15 +135,13 @@ export const WhiteboardRoomPage: React.FC = () => {
   // Sync remote screen track to video element
   useEffect(() => {
     if (remoteScreenVideoRef.current && activeScreenSharer) {
-      const stream =
-        remoteScreenStreams.get(activeScreenSharer.peerId) ||
-        remoteStreams.get(activeScreenSharer.peerId);
+      const stream = remoteScreenStreams.get(activeScreenSharer.peerId);
       if (stream) {
         remoteScreenVideoRef.current.srcObject = stream;
         remoteScreenVideoRef.current.play().catch(() => {});
       }
     }
-  }, [activeScreenSharer, remoteScreenStreams, remoteStreams]);
+  }, [activeScreenSharer, remoteScreenStreams]);
 
   // Automatically publish screen share track to WebRTC peers and SFU when active or stopped
   useEffect(() => {
@@ -394,7 +392,7 @@ export const WhiteboardRoomPage: React.FC = () => {
               </div>
             ) : activeScreenSharer ? (
               <div className="relative w-full h-full max-h-[88vh] bg-navy-900 rounded-2xl overflow-hidden border border-navy-800 shadow-2xl flex items-center justify-center">
-                {(remoteScreenStreams.get(activeScreenSharer.peerId) || remoteStreams.get(activeScreenSharer.peerId)) ? (
+                {remoteScreenStreams.get(activeScreenSharer.peerId) ? (
                   <video
                     autoPlay
                     playsInline

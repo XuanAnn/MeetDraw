@@ -190,6 +190,10 @@ export class RoomManager {
     }
     return false;
   }
+
+  getAllRooms(): Map<string, Map<string, ConnectedPeer>> {
+    return this.rooms;
+  }
 }
 
 export const roomManager = new RoomManager();

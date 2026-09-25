@@ -20,7 +20,8 @@ export type SignalType =
   | 'SFU_PAUSE_PRODUCER'
   | 'SFU_RESUME_PRODUCER'
   | 'SFU_ACTIVE_SPEAKER'
-  | 'SFU_STATS';
+  | 'SFU_STATS'
+  | 'TELEMETRY_REPORT';
 
 export interface PeerInfo {
   id: string;
@@ -28,6 +29,7 @@ export interface PeerInfo {
   userId?: string;
   joinedAt: number;
   isHost?: boolean;
+  isManage?: boolean; // Tên mới theo yêu cầu người dùng
 }
 
 export interface SignalMessage<T = unknown> {

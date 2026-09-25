@@ -12,6 +12,27 @@ import { RegisterPage } from './pages/Register/RegisterPage';
 import { ProjectHistoryPage } from './pages/ProjectHistory/ProjectHistoryPage';
 import { SettingsPage } from './pages/Settings/SettingsPage';
 
+const ServerMonitorEmbed: React.FC = () => {
+  const monitorUrl =
+    window.location.hostname === 'localhost'
+      ? 'http://localhost:5000/monitor'
+      : 'https://meetgold.onrender.com/monitor';
+
+  useEffect(() => {
+    window.location.href = monitorUrl;
+  }, [monitorUrl]);
+
+  return (
+    <div className="h-screen w-screen bg-navy-950 flex flex-col items-center justify-center text-white">
+      <div className="w-10 h-10 border-4 border-sky-400 border-t-transparent rounded-full animate-spin mb-4" />
+      <p className="text-sm font-semibold">Đang chuyển tiếp tới Server Room Monitor...</p>
+      <a href={monitorUrl} className="mt-3 text-xs text-sky-400 underline font-mono">
+        Bấm vào đây nếu trình duyệt không tự chuyển tiếp
+      </a>
+    </div>
+  );
+};
+
 export const App: React.FC = () => {
   const [sessionTerminated, setSessionTerminated] = useState<{ isOpen: boolean; reason: string }>({
     isOpen: false,
@@ -92,6 +113,10 @@ export const App: React.FC = () => {
                 <SettingsPage />
               </ProtectedRoute>
             }
+          />
+          <Route
+            path="/monitor"
+            element={<ServerMonitorEmbed />}
           />
 
           <Route path="*" element={<Navigate to="/" replace />} />
