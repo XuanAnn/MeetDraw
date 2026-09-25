@@ -215,7 +215,7 @@ export const GreenRoomPage: React.FC = () => {
                 >
                   {displayName.charAt(0).toUpperCase()}
                 </div>
-                <span className="text-sm font-semibold text-slate-300">Camera is turned off</span>
+                <span className="text-sm font-semibold text-slate-300">Camera đang tắt</span>
               </div>
             )}
 
@@ -228,7 +228,7 @@ export const GreenRoomPage: React.FC = () => {
                     ? 'bg-rose-alert text-white shadow-lg shadow-rose-alert/30'
                     : 'bg-navy-800 text-slate-200 hover:bg-navy-700'
                 }`}
-                title={isAudioMuted ? 'Unmute Mic' : 'Mute Mic'}
+                title={isAudioMuted ? 'Bật Micro' : 'Tắt Micro'}
               >
                 {isAudioMuted ? <MicOff size={18} /> : <Mic size={18} />}
               </button>
@@ -240,7 +240,7 @@ export const GreenRoomPage: React.FC = () => {
                     ? 'bg-rose-alert text-white shadow-lg shadow-rose-alert/30'
                     : 'bg-navy-800 text-slate-200 hover:bg-navy-700'
                 }`}
-                title={isVideoMuted ? 'Turn on Camera' : 'Turn off Camera'}
+                title={isVideoMuted ? 'Bật Camera' : 'Tắt Camera'}
               >
                 {isVideoMuted ? <VideoOff size={18} /> : <Video size={18} />}
               </button>
@@ -249,7 +249,15 @@ export const GreenRoomPage: React.FC = () => {
             {/* Virtual Background Badge */}
             <div className="absolute top-4 left-4 bg-navy-950/80 backdrop-blur-sm px-2.5 py-1 rounded-lg text-[11px] text-slate-300 border border-navy-800 flex items-center space-x-1.5">
               <Sparkles size={12} className="text-indigo-glow" />
-              <span className="capitalize">{virtualBg} Background</span>
+              <span>
+                {virtualBg === 'none'
+                  ? 'Nền gốc'
+                  : virtualBg === 'blur'
+                  ? 'Mờ nhẹ'
+                  : virtualBg === 'strong-blur'
+                  ? 'Mờ nhiều'
+                  : 'Studio'}
+              </span>
             </div>
           </div>
 
@@ -258,9 +266,9 @@ export const GreenRoomPage: React.FC = () => {
             <Mic size={16} className={audioLevel > 10 ? 'text-emerald-active' : 'text-slate-500'} />
             <div className="flex-1">
               <div className="flex justify-between text-[11px] text-slate-400 mb-1">
-                <span>Microphone Input Level</span>
+                <span>Mức tín hiệu âm thanh Micro</span>
                 <span className={audioLevel > 10 ? 'text-emerald-active font-semibold' : 'text-slate-500'}>
-                  {isAudioMuted ? 'Muted' : `${audioLevel}% Decibels`}
+                  {isAudioMuted ? 'Đã tắt tiếng' : `${audioLevel}%`}
                 </span>
               </div>
               <div className="h-2 w-full bg-navy-900 rounded-full overflow-hidden flex space-x-0.5 p-0.5">
@@ -276,9 +284,9 @@ export const GreenRoomPage: React.FC = () => {
         {/* Right: Peripherals & Join Control Card */}
         <div className="w-full lg:w-2/5 glass-panel p-6 rounded-2xl border border-navy-800 space-y-6">
           <div>
-            <h2 className="text-lg font-bold text-white mb-1">Ready to Collaborate?</h2>
+            <h2 className="text-lg font-bold text-white mb-1">Sẵn sàng tham gia?</h2>
             <p className="text-xs text-slate-400">
-              Verify your setup before entering the spatial whiteboard room.
+              Kiểm tra thiết bị của bạn trước khi vào phòng họp.
             </p>
           </div>
 
@@ -298,15 +306,14 @@ export const GreenRoomPage: React.FC = () => {
             </div>
             <span className="text-[10px] bg-emerald-500/20 text-emerald-active px-2 py-0.5 rounded-full font-semibold border border-emerald-500/30 flex items-center space-x-1">
               <Check size={10} />
-              <span>Verified MySQL</span>
+              <span>Đã xác thực</span>
             </span>
           </div>
 
           <div className="space-y-3">
-
             {/* Peripheral Dropdowns */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Microphone Source</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Nguồn Microphone</label>
               <select
                 value={selectedMic}
                 onChange={(e) => setSelectedMic(e.target.value)}
@@ -319,13 +326,13 @@ export const GreenRoomPage: React.FC = () => {
                     </option>
                   ))
                 ) : (
-                  <option value="">Default System Microphone</option>
+                  <option value="">Microphone mặc định</option>
                 )}
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Camera Source</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Nguồn Camera</label>
               <select
                 value={selectedCam}
                 onChange={(e) => setSelectedCam(e.target.value)}
@@ -338,7 +345,7 @@ export const GreenRoomPage: React.FC = () => {
                     </option>
                   ))
                 ) : (
-                  <option value="">Default Web Camera</option>
+                  <option value="">Camera mặc định</option>
                 )}
               </select>
             </div>
@@ -346,12 +353,12 @@ export const GreenRoomPage: React.FC = () => {
 
           {/* Virtual Background Selector */}
           <div className="space-y-2">
-            <label className="block text-xs font-semibold text-slate-300">Virtual Background</label>
+            <label className="block text-xs font-semibold text-slate-300">Hiệu ứng nền camera</label>
             <div className="grid grid-cols-4 gap-2">
               {[
-                { id: 'none', label: 'None' },
-                { id: 'blur', label: 'Soft Blur' },
-                { id: 'strong-blur', label: 'Max Blur' },
+                { id: 'none', label: 'Không' },
+                { id: 'blur', label: 'Mờ nhẹ' },
+                { id: 'strong-blur', label: 'Mờ nhiều' },
                 { id: 'tech', label: 'Studio' },
               ].map((bg) => (
                 <button
@@ -374,8 +381,8 @@ export const GreenRoomPage: React.FC = () => {
             <div className="flex items-center space-x-2">
               <Shield size={16} className="text-indigo-glow" />
               <div>
-                <div className="text-xs font-semibold text-slate-200">AI Noise Suppression</div>
-                <div className="text-[10px] text-slate-400">Filters keyboard clicks and room echo</div>
+                <div className="text-xs font-semibold text-slate-200">Khử tiếng ồn & tiếng vang</div>
+                <div className="text-[10px] text-slate-400">Lọc tạp âm và tiếng vang môi trường</div>
               </div>
             </div>
             <button
@@ -397,7 +404,7 @@ export const GreenRoomPage: React.FC = () => {
             onClick={handleJoinRoom}
             className="w-full bg-indigo-accent hover:bg-indigo-light text-white font-bold text-sm py-3.5 rounded-xl transition shadow-xl shadow-indigo-accent/30 flex items-center justify-center space-x-2"
           >
-            <span>Enter Room</span>
+            <span>Vào phòng họp</span>
             <ArrowRight size={16} />
           </button>
         </div>
@@ -405,7 +412,7 @@ export const GreenRoomPage: React.FC = () => {
 
       {/* Footer */}
       <footer className="py-4 text-center text-xs text-slate-500 border-t border-navy-900">
-        WebRTC E2EE Audio & Video Engine • Low Latency Spatial Room
+        MeetDraw • Không gian họp trực tuyến & Bảng vẽ cộng tác
       </footer>
     </div>
   );

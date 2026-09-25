@@ -4,7 +4,14 @@ export type DataChannelPacketType =
   | 'WHITEBOARD'
   | 'CHAT'
   | 'CURSOR'
-  | 'POLL';
+  | 'POLL'
+  | 'SCREEN_SHARE';
+
+export interface ScreenShareStatePayload {
+  isSharing: boolean;
+  peerId: string;
+  username: string;
+}
 
 export interface ChatMessage {
   id: string;

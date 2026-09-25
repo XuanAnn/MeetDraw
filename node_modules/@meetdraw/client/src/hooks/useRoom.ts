@@ -5,6 +5,7 @@ import {
   RoomJoinedPayload,
   UserJoinedPayload,
   UserLeftPayload,
+  SessionTerminatedPayload,
 } from '@meetdraw/shared';
 import { signalingService } from '../services/signaling.service';
 import { apiService } from '../services/api';
@@ -14,6 +15,8 @@ export function useRoom(roomId: string, username: string, userId?: string, email
   const [participants, setParticipants] = useState<PeerInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSessionTerminated, setIsSessionTerminated] = useState(false);
+  const [terminationReason, setTerminationReason] = useState<string>('');
 
   useEffect(() => {
     if (!roomId) return;
@@ -85,11 +88,22 @@ export function useRoom(roomId: string, username: string, userId?: string, email
       }
     });
 
+    // Listen for session terminated (e.g. account opened in another browser)
+    const unsubTerminated = signalingService.on<SessionTerminatedPayload>('SESSION_TERMINATED', (msg) => {
+      if (isMounted) {
+        setIsSessionTerminated(true);
+        if (msg.payload?.reason) {
+          setTerminationReason(msg.payload.reason);
+        }
+      }
+    });
+
     return () => {
       isMounted = false;
       unsubJoined();
       unsubUserJoined();
       unsubUserLeft();
+      unsubTerminated();
       signalingService.leaveRoom(roomId);
     };
   }, [roomId, username, userId, email]);
@@ -103,6 +117,8 @@ export function useRoom(roomId: string, username: string, userId?: string, email
     participants,
     isLoading,
     error,
+    isSessionTerminated,
+    terminationReason,
     leave,
   };
 }

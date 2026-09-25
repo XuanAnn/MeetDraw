@@ -36,7 +36,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         <div className="flex items-center space-x-2">
           <MessageSquare size={16} className="text-sky-400" />
           <span className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
-            In-Call Chat (P2P)
+            Trò chuyện ({messages.length})
           </span>
         </div>
         <button
@@ -52,8 +52,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center text-xs text-gray-500">
             <MessageSquare size={24} className="mb-2 opacity-40 text-sky-400" />
-            <p>Messages are exchanged directly via WebRTC DataChannel (UDP).</p>
-            <p className="mt-1 text-gray-600">Say hi to everyone in the room!</p>
+            <p>Chưa có tin nhắn nào trong phòng.</p>
+            <p className="mt-1 text-gray-500">Hãy gửi tin nhắn để trò chuyện với mọi người!</p>
           </div>
         ) : (
           messages.map((msg) => {
@@ -65,7 +65,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
               >
                 <div className="flex items-center space-x-1.5 mb-0.5 text-[10px] text-gray-400">
                   <span className="font-semibold text-gray-300">
-                    {isMe ? 'You' : msg.senderName}
+                    {isMe ? 'Bạn' : msg.senderName}
                   </span>
                   <span>
                     {new Date(msg.timestamp).toLocaleTimeString([], {
@@ -96,7 +96,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder="Send a message..."
+          placeholder="Nhập tin nhắn..."
           className="flex-1 bg-gray-800 text-gray-100 text-xs px-3 py-2 rounded-xl focus:outline-none focus:ring-1 focus:ring-sky-500 border border-gray-700 placeholder-gray-500"
         />
         <button

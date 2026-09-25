@@ -25,7 +25,7 @@ export const ParticipantsPanel: React.FC<ParticipantsPanelProps> = ({
         <div className="flex items-center space-x-2">
           <Users size={16} className="text-sky-400" />
           <span className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
-            Participants ({participants.length + 1})
+            Thành viên ({participants.length + 1})
           </span>
         </div>
         <button
@@ -47,13 +47,13 @@ export const ParticipantsPanel: React.FC<ParticipantsPanelProps> = ({
             <div>
               <div className="text-xs font-medium text-gray-100 flex items-center space-x-1">
                 <span>{selfName}</span>
-                <span className="text-[10px] text-sky-400 font-bold">(You)</span>
+                <span className="text-[10px] text-sky-400 font-bold">(Bạn)</span>
               </div>
-              <div className="text-[10px] text-gray-400">Local Peer</div>
+              <div className="text-[10px] text-gray-400">Thiết bị hiện tại</div>
             </div>
           </div>
           <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-medium">
-            Active
+            Đang hoạt động
           </span>
         </div>
 
@@ -77,7 +77,7 @@ export const ParticipantsPanel: React.FC<ParticipantsPanelProps> = ({
                     {p.isHost && (
                       <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-medium flex items-center space-x-0.5">
                         <Shield size={10} />
-                        <span>Host</span>
+                        <span>Chủ phòng</span>
                       </span>
                     )}
                   </div>
@@ -95,7 +95,13 @@ export const ParticipantsPanel: React.FC<ParticipantsPanelProps> = ({
                       : 'bg-rose-500'
                   }`}
                 />
-                <span className="text-[10px] text-gray-400 capitalize">{state}</span>
+                <span className="text-[10px] text-gray-400">
+                  {state === 'connected'
+                    ? 'Đã kết nối'
+                    : state === 'connecting'
+                    ? 'Đang kết nối'
+                    : 'Mất kết nối'}
+                </span>
               </div>
             </div>
           );

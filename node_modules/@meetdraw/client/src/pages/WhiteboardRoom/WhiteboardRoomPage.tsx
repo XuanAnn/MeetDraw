@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { TopNav, ActiveMeetingView } from '../../components/TopNav/TopNav';
 import { Toolbar } from '../../components/Toolbar/Toolbar';
@@ -8,6 +8,7 @@ import { ChatPanel } from '../../components/ChatPanel/ChatPanel';
 import { ParticipantsPanel } from '../../components/Participants/ParticipantsPanel';
 import { LivePollsPanel } from '../../components/LivePolls/LivePollsPanel';
 import { Sidebar } from '../../components/Sidebar/Sidebar';
+import { SessionTerminatedModal } from '../../components/Modal/SessionTerminatedModal';
 
 import { useWhiteboard } from '../../hooks/useWhiteboard';
 import { useWebRTC } from '../../hooks/useWebRTC';
@@ -42,7 +43,7 @@ export const WhiteboardRoomPage: React.FC = () => {
   // Live Polls state (created by users in real-time)
   const [polls, setPolls] = useState<PollData[]>([]);
 
-  // Record user joining room in MySQL
+  // Record user joining room
   useEffect(() => {
     if (roomId) {
       apiService.joinRoom(roomId).catch(() => {});
@@ -53,7 +54,13 @@ export const WhiteboardRoomPage: React.FC = () => {
   const { isConnected: isWsConnected, selfPeerId } = useWebSocket();
 
   // 2. Room membership and presence
-  const { roomDetails, participants, leave } = useRoom(roomId, actualUsername, currentUser?.id, currentUser?.email);
+  const {
+    roomDetails,
+    participants,
+    leave,
+    isSessionTerminated,
+    terminationReason,
+  } = useRoom(roomId, actualUsername, currentUser?.id, currentUser?.email);
 
   // 3. Local Camera, Microphone & Screen Share
   const {
@@ -105,19 +112,64 @@ export const WhiteboardRoomPage: React.FC = () => {
   const {
     remotePeers,
     remoteStreams,
+    remoteScreenStreams,
     chatMessages,
     activePeersCount,
     sendChatMessage,
     sfuStats,
     activeSpeakerId,
+    activeScreenSharer,
   } = useWebRTC(roomId, applyRemoteEvent, localStream);
 
-  // Automatically publish screen share track to SFU when active
+  const localScreenVideoRef = useRef<HTMLVideoElement | null>(null);
+  const remoteScreenVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  // Sync local screen track to video element
   useEffect(() => {
-    if (screenStream) {
-      peerManager.publishScreenTrack(screenStream);
+    if (localScreenVideoRef.current && screenStream) {
+      localScreenVideoRef.current.srcObject = screenStream;
+      localScreenVideoRef.current.play().catch(() => {});
     }
   }, [screenStream]);
+
+  // Sync remote screen track to video element
+  useEffect(() => {
+    if (remoteScreenVideoRef.current && activeScreenSharer) {
+      const stream =
+        remoteScreenStreams.get(activeScreenSharer.peerId) ||
+        remoteStreams.get(activeScreenSharer.peerId);
+      if (stream) {
+        remoteScreenVideoRef.current.srcObject = stream;
+        remoteScreenVideoRef.current.play().catch(() => {});
+      }
+    }
+  }, [activeScreenSharer, remoteScreenStreams, remoteStreams]);
+
+  // Automatically publish screen share track to WebRTC peers and SFU when active or stopped
+  useEffect(() => {
+    peerManager.publishScreenTrack(screenStream, actualUsername);
+  }, [screenStream, actualUsername]);
+
+  // Priority Auto-Switch: Prioritize displaying screen share when anyone shares; revert to whiteboard when stopped
+  useEffect(() => {
+    if (isScreenSharing || activeScreenSharer) {
+      setActiveView('screenshare');
+    } else {
+      setActiveView('whiteboard');
+    }
+  }, [isScreenSharing, activeScreenSharer]);
+
+  // Stop media hardware cleanly if session is terminated by duplicate browser login
+  useEffect(() => {
+    if (isSessionTerminated) {
+      if (localStream) {
+        localStream.getTracks().forEach((t) => t.stop());
+      }
+      if (screenStream) {
+        screenStream.getTracks().forEach((t) => t.stop());
+      }
+    }
+  }, [isSessionTerminated, localStream, screenStream]);
 
   // Auto-unlock browser audio autoplay policies on first click or keypress
   useEffect(() => {
@@ -158,7 +210,7 @@ export const WhiteboardRoomPage: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Load latest whiteboard snapshot from MySQL on mount
+  // Load latest whiteboard snapshot on mount
   useEffect(() => {
     if (roomId) {
       apiService
@@ -237,10 +289,10 @@ export const WhiteboardRoomPage: React.FC = () => {
     );
   };
 
-  // Leave room -> Transition to Post-Meeting Archive & AI Summary (Màn hình 5)
+  // Leave room -> Return to Dashboard
   const handleLeave = () => {
     leave();
-    navigate(`/summary/${roomId}`);
+    navigate('/dashboard');
   };
 
   return (
@@ -255,6 +307,7 @@ export const WhiteboardRoomPage: React.FC = () => {
         userColor={actualColor}
         activeView={activeView}
         setActiveView={setActiveView}
+        isScreenSharingActive={isScreenSharing || !!activeScreenSharer}
         sfuStats={sfuStats}
         onLeaveRoom={handleLeave}
       />
@@ -263,7 +316,7 @@ export const WhiteboardRoomPage: React.FC = () => {
       {snapshotSaved && (
         <div className="absolute top-16 right-20 z-50 bg-emerald-600 text-white text-xs font-semibold px-3.5 py-2 rounded-xl shadow-xl animate-fade-in flex items-center space-x-1.5 border border-emerald-400/30">
           <Sparkles size={14} />
-          <span>Spatial Whiteboard snapshot secured to MySQL!</span>
+          <span>Đã lưu bản vẽ thành công!</span>
         </div>
       )}
 
@@ -318,27 +371,57 @@ export const WhiteboardRoomPage: React.FC = () => {
             }`}
           >
             {isScreenSharing && screenStream ? (
-              <div className="relative w-full h-full max-h-[85vh] bg-navy-900 rounded-2xl overflow-hidden border border-navy-800 shadow-2xl flex items-center justify-center">
+              <div className="relative w-full h-full max-h-[88vh] bg-navy-900 rounded-2xl overflow-hidden border border-navy-800 shadow-2xl flex items-center justify-center">
                 <video
                   autoPlay
                   playsInline
-                  ref={(el) => {
-                    if (el && screenStream) el.srcObject = screenStream;
-                  }}
+                  ref={localScreenVideoRef}
                   className="w-full h-full object-contain"
                 />
 
-                {/* 60fps Presentation Badge */}
-                <div className="absolute top-4 left-4 bg-navy-950/80 backdrop-blur-md px-3 py-1 rounded-xl text-xs text-white border border-navy-700 flex items-center space-x-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-active animate-pulse" />
-                  <span className="font-bold">Screen Share (1080p 60fps)</span>
+                {/* Presentation Badge */}
+                <div className="absolute top-4 left-4 bg-navy-950/80 backdrop-blur-md px-3.5 py-1.5 rounded-xl text-xs text-white border border-navy-700 flex items-center space-x-2 shadow-lg">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-active animate-pulse" />
+                  <span className="font-bold">Bạn đang chia sẻ màn hình</span>
                 </div>
 
                 <button
                   onClick={stopScreenShare}
-                  className="absolute top-4 right-4 bg-rose-alert/90 hover:bg-rose-alert text-white text-xs font-bold px-3 py-1.5 rounded-xl transition"
+                  className="absolute top-4 right-4 bg-rose-alert/90 hover:bg-rose-alert text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition shadow-lg"
                 >
-                  Stop Sharing
+                  Dừng chia sẻ
+                </button>
+              </div>
+            ) : activeScreenSharer ? (
+              <div className="relative w-full h-full max-h-[88vh] bg-navy-900 rounded-2xl overflow-hidden border border-navy-800 shadow-2xl flex items-center justify-center">
+                {(remoteScreenStreams.get(activeScreenSharer.peerId) || remoteStreams.get(activeScreenSharer.peerId)) ? (
+                  <video
+                    autoPlay
+                    playsInline
+                    ref={remoteScreenVideoRef}
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-slate-400 space-y-3">
+                    <div className="w-8 h-8 rounded-full border-2 border-indigo-accent border-t-transparent animate-spin" />
+                    <span className="text-xs">Đang tải luồng chia sẻ của {activeScreenSharer.username}...</span>
+                  </div>
+                )}
+
+                {/* Presentation Badge */}
+                <div className="absolute top-4 left-4 bg-navy-950/80 backdrop-blur-md px-3.5 py-1.5 rounded-xl text-xs text-white border border-navy-700 flex items-center space-x-2 shadow-lg">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="font-bold">Màn hình của {activeScreenSharer.username}</span>
+                </div>
+
+                {/* Quick button to view whiteboard */}
+                <button
+                  onClick={() => setActiveView('whiteboard')}
+                  className="absolute top-4 right-4 bg-navy-900/80 hover:bg-navy-800 text-slate-300 hover:text-white text-xs px-3 py-1.5 rounded-xl border border-navy-700 transition flex items-center space-x-1.5 shadow-lg"
+                  title="Chuyển về bảng vẽ [W]"
+                >
+                  <span>Xem bảng vẽ</span>
+                  <span className="text-[10px] opacity-70 bg-black/30 px-1 py-0.2 rounded font-mono">[W]</span>
                 </button>
               </div>
             ) : (
@@ -347,9 +430,9 @@ export const WhiteboardRoomPage: React.FC = () => {
                   <Monitor size={32} />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">Presentation Mode (Screen Share)</h3>
+                  <h3 className="text-base font-bold text-white">Chia sẻ màn hình</h3>
                   <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                    Broadcast your screen, architecture slides, or IDE directly to peers at 60fps crystal clear.
+                    Chia sẻ toàn bộ màn hình, cửa sổ ứng dụng hoặc tài liệu của bạn cho mọi người trong phòng.
                   </p>
                 </div>
                 <button
@@ -357,7 +440,7 @@ export const WhiteboardRoomPage: React.FC = () => {
                   className="bg-indigo-accent hover:bg-indigo-light text-white font-bold text-xs px-5 py-3 rounded-xl transition shadow-xl shadow-indigo-accent/30 flex items-center justify-center space-x-2 mx-auto"
                 >
                   <Share2 size={15} />
-                  <span>Start Sharing Screen</span>
+                  <span>Bắt đầu chia sẻ màn hình</span>
                 </button>
               </div>
             )}
@@ -451,6 +534,9 @@ export const WhiteboardRoomPage: React.FC = () => {
           />
         ))}
       </div>
+
+      {/* Session Terminated Notification Modal (Triggers when account is opened in another browser) */}
+      <SessionTerminatedModal isOpen={isSessionTerminated} reason={terminationReason} />
     </div>
   );
 };

@@ -68,9 +68,9 @@ export const LobbyPage: React.FC = () => {
           </div>
           <div>
             <h1 className="text-lg font-bold tracking-tight text-white flex items-center space-x-1.5">
-              <span>NowaDraw</span>
-              <span className="text-[10px] bg-sky-500/20 text-sky-400 font-semibold px-2 py-0.5 rounded-full border border-sky-500/30">
-                P2P WebRTC
+              <span>MeetDraw</span>
+              <span className="text-[10px] bg-emerald-500/20 text-emerald-400 font-semibold px-2 py-0.5 rounded-full border border-emerald-500/30">
+                Trực tuyến
               </span>
             </h1>
           </div>
@@ -120,11 +120,10 @@ export const LobbyPage: React.FC = () => {
       <main className="max-w-4xl w-full mx-auto px-6 py-12 flex-1 flex flex-col justify-center">
         <div className="text-center max-w-xl mx-auto mb-10 space-y-3">
           <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-            Real-Time Whiteboard & Video Conference
+            Họp trực tuyến & Bảng vẽ cộng tác
           </h2>
           <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
-            Ultra-low latency peer-to-peer collaboration using WebRTC (UDP). Server handles signaling;
-            drawings, audio, and video stream directly between peers.
+            Kết nối âm thanh, hình ảnh và tương tác vẽ bảng trắng mượt mà trong thời gian thực.
           </p>
         </div>
 
@@ -224,7 +223,7 @@ export const LobbyPage: React.FC = () => {
 
       {/* Footer */}
       <footer className="py-4 text-center text-xs text-gray-600 border-t border-gray-900">
-        NowaDraw Version 1 • Built with TypeScript, React, Node.js, WebRTC Mesh (UDP), Fabric.js, and MySQL
+        MeetDraw • Không gian họp trực tuyến & Bảng vẽ cộng tác
       </footer>
     </div>
   );

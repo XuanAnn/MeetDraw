@@ -47,7 +47,7 @@ export const VideoPanel: React.FC<VideoPanelProps> = ({
                 ? 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30'
                 : 'bg-gray-800 text-gray-200 hover:bg-gray-700'
             }`}
-            title={isAudioMuted ? 'Unmute Microphone' : 'Mute Microphone'}
+            title={isAudioMuted ? 'Bật Micro' : 'Tắt Micro'}
           >
             {isAudioMuted ? <MicOff size={15} /> : <Mic size={15} />}
           </button>
@@ -59,7 +59,7 @@ export const VideoPanel: React.FC<VideoPanelProps> = ({
                 ? 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30'
                 : 'bg-gray-800 text-gray-200 hover:bg-gray-700'
             }`}
-            title={isVideoMuted ? 'Start Video' : 'Stop Video'}
+            title={isVideoMuted ? 'Bật Camera' : 'Tắt Camera'}
           >
             {isVideoMuted ? <VideoOff size={15} /> : <Video size={15} />}
           </button>
@@ -104,7 +104,7 @@ export const VideoPanel: React.FC<VideoPanelProps> = ({
 
           {peerList.length === 0 && (
             <div className="text-center py-6 px-2 text-xs text-gray-500">
-              No other participants connected yet. Share the room link to invite others!
+              Chưa có người tham gia nào khác trong phòng. Hãy chia sẻ mã hoặc liên kết phòng để mời mọi người!
             </div>
           )}
         </div>

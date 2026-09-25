@@ -18,6 +18,7 @@ export function useWebRTC(
 ) {
   const [remotePeers, setRemotePeers] = useState<Map<string, RemotePeerState>>(new Map());
   const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
+  const [remoteScreenStreams, setRemoteScreenStreams] = useState<Map<string, MediaStream>>(new Map());
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [activePeersCount, setActivePeersCount] = useState(0);
   const [sfuStats, setSfuStats] = useState<SfuStatsPayload>({
@@ -28,6 +29,7 @@ export function useWebRTC(
     activeSpeakerId: null,
   });
   const [activeSpeakerId, setActiveSpeakerId] = useState<string | null>(null);
+  const [activeScreenSharer, setActiveScreenSharer] = useState<{ peerId: string; username: string } | null>(null);
 
   const onRemoteWhiteboardRef = useRef(onRemoteWhiteboardEvent);
   onRemoteWhiteboardRef.current = onRemoteWhiteboardEvent;
@@ -92,8 +94,25 @@ export function useWebRTC(
         });
       },
 
+      onRemoteScreenStream: (peerId, stream) => {
+        setRemoteScreenStreams((prev) => {
+          const next = new Map(prev);
+          if (stream) {
+            next.set(peerId, stream);
+          } else {
+            next.delete(peerId);
+          }
+          return next;
+        });
+      },
+
       onRemoteStreamRemoved: (peerId) => {
         setRemoteStreams((prev) => {
+          const next = new Map(prev);
+          next.delete(peerId);
+          return next;
+        });
+        setRemoteScreenStreams((prev) => {
           const next = new Map(prev);
           next.delete(peerId);
           return next;
@@ -128,6 +147,10 @@ export function useWebRTC(
       onActiveSpeaker: (speakerId) => {
         setActiveSpeakerId(speakerId);
       },
+
+      onScreenShareState: (sharer) => {
+        setActiveScreenSharer(sharer);
+      },
     });
 
     return () => {
@@ -156,10 +179,12 @@ export function useWebRTC(
   return {
     remotePeers,
     remoteStreams,
+    remoteScreenStreams,
     chatMessages,
     activePeersCount,
     sendChatMessage,
     sfuStats,
     activeSpeakerId,
+    activeScreenSharer,
   };
 }

@@ -14,8 +14,8 @@ export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ childr
           <Sparkles size={24} />
         </div>
         <div className="text-center space-y-1">
-          <div className="text-sm font-bold text-white">MeetDraw Authentication</div>
-          <div className="text-xs text-slate-400">Verifying session against Docker MySQL...</div>
+          <div className="text-sm font-bold text-white">MeetDraw</div>
+          <div className="text-xs text-slate-400">Đang kiểm tra phiên làm việc...</div>
         </div>
       </div>
     );

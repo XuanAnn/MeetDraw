@@ -76,16 +76,16 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   const [showColorPicker, setShowColorPicker] = useState(false);
 
   const tools: { id: ToolType; label: string; icon: React.ReactNode }[] = [
-    { id: 'select', label: 'Select & Move (V)', icon: <MousePointer size={17} /> },
-    { id: 'pan', label: 'Pan Hand (H)', icon: <Hand size={17} /> },
-    { id: 'pen', label: 'Pen (P)', icon: <Pen size={17} /> },
-    { id: 'highlighter', label: 'Highlighter', icon: <Highlighter size={17} /> },
-    { id: 'sticky', label: 'Sticky Note', icon: <StickyNote size={17} /> },
-    { id: 'rect', label: 'Rectangle (R)', icon: <Square size={17} /> },
-    { id: 'circle', label: 'Circle (O)', icon: <CircleIcon size={17} /> },
-    { id: 'line', label: 'Line (L)', icon: <Minus size={17} /> },
-    { id: 'text', label: 'Text (T)', icon: <Type size={17} /> },
-    { id: 'eraser', label: 'Eraser', icon: <Eraser size={17} /> },
+    { id: 'select', label: 'Chọn & Di chuyển (V)', icon: <MousePointer size={17} /> },
+    { id: 'pan', label: 'Di chuyển bảng (H)', icon: <Hand size={17} /> },
+    { id: 'pen', label: 'Bút vẽ (P)', icon: <Pen size={17} /> },
+    { id: 'highlighter', label: 'Bút dạ quang', icon: <Highlighter size={17} /> },
+    { id: 'sticky', label: 'Ghi chú dán', icon: <StickyNote size={17} /> },
+    { id: 'rect', label: 'Hình chữ nhật (R)', icon: <Square size={17} /> },
+    { id: 'circle', label: 'Hình tròn (O)', icon: <CircleIcon size={17} /> },
+    { id: 'line', label: 'Đường thẳng (L)', icon: <Minus size={17} /> },
+    { id: 'text', label: 'Văn bản (T)', icon: <Type size={17} /> },
+    { id: 'eraser', label: 'Tẩy xóa', icon: <Eraser size={17} /> },
   ];
 
   return (
@@ -121,12 +121,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             onClick={() => setShowColorPicker(!showColorPicker)}
             className="w-7 h-7 rounded-xl border-2 border-navy-700 flex items-center justify-center transition hover:scale-105"
             style={{ backgroundColor: strokeColor }}
-            title="Choose Color"
+            title="Chọn màu sắc"
           />
 
           {showColorPicker && (
             <div className="absolute top-10 left-0 bg-navy-900 border border-navy-700 p-2.5 rounded-xl shadow-2xl flex flex-col space-y-2 z-30">
-              <div className="text-[10px] font-semibold text-slate-400">Palette</div>
+              <div className="text-[10px] font-semibold text-slate-400">Bảng màu</div>
               <div className="grid grid-cols-4 gap-1.5">
                 {PRESET_COLORS.map((c) => (
                   <button
@@ -143,7 +143,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 ))}
               </div>
 
-              <div className="text-[10px] font-semibold text-slate-400 pt-1">Fill Mode</div>
+              <div className="text-[10px] font-semibold text-slate-400 pt-1">Đổ màu</div>
               <div className="flex space-x-1">
                 <button
                   onClick={() => setFillColor('transparent')}
@@ -151,7 +151,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                     fillColor === 'transparent' ? 'bg-indigo-accent text-white' : 'bg-navy-800 text-slate-400'
                   }`}
                 >
-                  None
+                  Không
                 </button>
                 <button
                   onClick={() => setFillColor(strokeColor + '33')}
@@ -159,7 +159,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                     fillColor !== 'transparent' ? 'bg-indigo-accent text-white' : 'bg-navy-800 text-slate-400'
                   }`}
                 >
-                  Tint
+                  Mờ
                 </button>
               </div>
             </div>
@@ -191,7 +191,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           onClick={undo}
           disabled={!canUndo}
           className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-navy-800 disabled:opacity-30 transition"
-          title="Undo"
+          title="Hoàn tác (Ctrl+Z)"
         >
           <Undo2 size={16} />
         </button>
@@ -199,23 +199,23 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           onClick={redo}
           disabled={!canRedo}
           className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-navy-800 disabled:opacity-30 transition"
-          title="Redo"
+          title="Làm lại (Ctrl+Y)"
         >
           <Redo2 size={16} />
         </button>
         <button
           onClick={deleteSelected}
           className="p-1.5 rounded-xl text-slate-400 hover:text-rose-alert hover:bg-navy-800 transition"
-          title="Delete Selected"
+          title="Xóa đối tượng đã chọn"
         >
           <Trash2 size={16} />
         </button>
         <button
           onClick={clearCanvas}
           className="text-[11px] px-2 py-1 rounded-xl text-slate-400 hover:text-rose-alert hover:bg-navy-800 transition font-medium"
-          title="Clear Entire Canvas"
+          title="Xóa toàn bộ bản vẽ"
         >
-          Clear
+          Xóa hết
         </button>
       </div>
 
@@ -225,21 +225,21 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           <button
             onClick={zoomOut}
             className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-navy-800 transition"
-            title="Zoom Out"
+            title="Thu nhỏ"
           >
             <ZoomOut size={15} />
           </button>
           <button
             onClick={resetZoom}
             className="text-[10px] font-mono font-bold text-slate-300 px-1.5 py-0.5 rounded bg-navy-850 hover:bg-navy-800 transition"
-            title="Reset Zoom"
+            title="Đặt lại mức thu phóng (100%)"
           >
             {zoomLevel}%
           </button>
           <button
             onClick={zoomIn}
             className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-navy-800 transition"
-            title="Zoom In"
+            title="Phóng to"
           >
             <ZoomIn size={15} />
           </button>

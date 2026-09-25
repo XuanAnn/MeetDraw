@@ -22,7 +22,7 @@ export const RegisterPage: React.FC = () => {
       await register({ username, email, password });
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Registration failed. Please check your information.');
+      setError(err.message || 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.');
     } finally {
       setLoading(false);
     }
@@ -36,7 +36,7 @@ export const RegisterPage: React.FC = () => {
           className="inline-flex items-center space-x-1.5 text-xs text-slate-400 hover:text-white transition"
         >
           <ArrowLeft size={14} />
-          <span>Back to Sign In</span>
+          <span>Quay lại Đăng nhập</span>
         </Link>
 
         <div className="flex items-center space-x-2.5">
@@ -44,8 +44,8 @@ export const RegisterPage: React.FC = () => {
             MD
           </div>
           <div>
-            <h2 className="text-xl font-extrabold text-white">Create Account</h2>
-            <p className="text-xs text-slate-400">Stores identity directly into Docker MySQL</p>
+            <h2 className="text-xl font-extrabold text-white">Đăng ký tài khoản</h2>
+            <p className="text-xs text-slate-400">Tạo tài khoản để tham gia phòng họp và vẽ tương tác</p>
           </div>
         </div>
 
@@ -57,38 +57,38 @@ export const RegisterPage: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Full Name</label>
+            <label className="block text-xs font-semibold text-slate-300 mb-1">Họ và tên</label>
             <input
               type="text"
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Alex Walker"
+              placeholder="Nguyễn Văn A"
               className="w-full bg-navy-900 text-slate-100 text-xs px-3.5 py-2.5 rounded-xl border border-navy-700 focus:outline-none focus:border-indigo-light"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
+            <label className="block text-xs font-semibold text-slate-300 mb-1">Địa chỉ Email</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="alex@meetdraw.io"
+              placeholder="ten@vidu.com"
               className="w-full bg-navy-900 text-slate-100 text-xs px-3.5 py-2.5 rounded-xl border border-navy-700 focus:outline-none focus:border-indigo-light"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Password</label>
+            <label className="block text-xs font-semibold text-slate-300 mb-1">Mật khẩu</label>
             <input
               type="password"
               required
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="•••••••• (minimum 6 characters)"
+              placeholder="•••••••• (tối thiểu 6 ký tự)"
               className="w-full bg-navy-900 text-slate-100 text-xs px-3.5 py-2.5 rounded-xl border border-navy-700 focus:outline-none focus:border-indigo-light"
             />
           </div>
@@ -99,14 +99,14 @@ export const RegisterPage: React.FC = () => {
             className="w-full bg-indigo-accent hover:bg-indigo-light font-bold text-white text-xs py-3 rounded-xl transition shadow-xl shadow-indigo-accent/30 flex items-center justify-center space-x-2"
           >
             <UserPlus size={15} />
-            <span>{loading ? 'Creating in MySQL...' : 'Sign Up & Continue'}</span>
+            <span>{loading ? 'Đang tạo tài khoản...' : 'Đăng ký'}</span>
           </button>
         </form>
 
         <div className="text-center text-xs text-slate-400">
-          Already have an account?{' '}
+          Đã có tài khoản?{' '}
           <Link to="/login" className="text-indigo-light hover:underline font-semibold">
-            Sign In
+            Đăng nhập
           </Link>
         </div>
       </div>

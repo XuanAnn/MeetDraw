@@ -71,7 +71,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ? 'bg-indigo-accent text-white shadow-md shadow-indigo-accent/30'
               : 'text-slate-400 hover:text-white hover:bg-navy-900'
           }`}
-          title="Toggle Live Chat"
+          title="Mở trò chuyện"
         >
           <MessageSquare size={18} />
           {unreadChatCount > 0 && !isChatOpen && (
@@ -80,7 +80,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </span>
           )}
           <span className="absolute right-14 bg-navy-900 text-[11px] text-slate-200 px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition whitespace-nowrap border border-navy-800 z-30">
-            Live Chat (P2P)
+            Trò chuyện
           </span>
         </button>
 
@@ -98,7 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ? 'bg-indigo-accent text-white shadow-md shadow-indigo-accent/30'
               : 'text-slate-400 hover:text-white hover:bg-navy-900'
           }`}
-          title="Toggle Live Polls"
+          title="Mở khảo sát"
         >
           <BarChart3 size={18} />
           {activePollsCount > 0 && !isPollsOpen && (
@@ -107,7 +107,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </span>
           )}
           <span className="absolute right-14 bg-navy-900 text-[11px] text-slate-200 px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition whitespace-nowrap border border-navy-800 z-30">
-            Live Polls
+            Khảo sát
           </span>
         </button>
 
@@ -125,11 +125,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ? 'bg-indigo-accent text-white shadow-md shadow-indigo-accent/30'
               : 'text-slate-400 hover:text-white hover:bg-navy-900'
           }`}
-          title="Toggle Participants"
+          title="Danh sách người tham gia"
         >
           <Users size={18} />
           <span className="absolute right-14 bg-navy-900 text-[11px] text-slate-200 px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition whitespace-nowrap border border-navy-800 z-30">
-            Participants
+            Thành viên
           </span>
         </button>
       </div>
@@ -139,22 +139,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           onClick={onSaveSnapshot}
           className="p-2.5 rounded-xl text-slate-400 hover:text-emerald-active hover:bg-navy-900 transition relative group"
-          title="Save Snapshot to MySQL"
+          title="Lưu bản vẽ"
         >
           <Save size={18} />
           <span className="absolute right-14 bg-navy-900 text-[11px] text-slate-200 px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition whitespace-nowrap border border-navy-800 z-30">
-            Save Snapshot
+            Lưu bản vẽ
           </span>
         </button>
 
         <button
           onClick={onExportImage}
           className="p-2.5 rounded-xl text-slate-400 hover:text-cyan-accent hover:bg-navy-900 transition relative group"
-          title="Export Canvas PNG"
+          title="Xuất ảnh PNG"
         >
           <Download size={18} />
           <span className="absolute right-14 bg-navy-900 text-[11px] text-slate-200 px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition whitespace-nowrap border border-navy-800 z-30">
-            Export PNG
+            Xuất PNG
           </span>
         </button>
       </div>

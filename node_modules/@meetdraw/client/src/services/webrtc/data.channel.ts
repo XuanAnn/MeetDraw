@@ -1,4 +1,4 @@
-import { DataChannelPacket, WhiteboardEvent, ChatMessage } from '@meetdraw/shared';
+import { DataChannelPacket, WhiteboardEvent, ChatMessage, ScreenShareStatePayload } from '@meetdraw/shared';
 import { createLogger } from '../../utils/logger';
 
 const log = createLogger('DataChannel');
@@ -8,6 +8,7 @@ export class ManagedDataChannel {
   private peerId: string;
   private onWhiteboardEvent: (peerId: string, event: WhiteboardEvent) => void;
   private onChatMessage: (peerId: string, msg: ChatMessage) => void;
+  private onScreenShareEvent?: (peerId: string, payload: ScreenShareStatePayload) => void;
   private onOpen?: () => void;
   private onClose?: () => void;
 
@@ -17,6 +18,7 @@ export class ManagedDataChannel {
     callbacks: {
       onWhiteboardEvent: (peerId: string, event: WhiteboardEvent) => void;
       onChatMessage: (peerId: string, msg: ChatMessage) => void;
+      onScreenShareEvent?: (peerId: string, payload: ScreenShareStatePayload) => void;
       onOpen?: () => void;
       onClose?: () => void;
     }
@@ -25,6 +27,7 @@ export class ManagedDataChannel {
     this.peerId = peerId;
     this.onWhiteboardEvent = callbacks.onWhiteboardEvent;
     this.onChatMessage = callbacks.onChatMessage;
+    this.onScreenShareEvent = callbacks.onScreenShareEvent;
     this.onOpen = callbacks.onOpen;
     this.onClose = callbacks.onClose;
 
@@ -58,6 +61,9 @@ export class ManagedDataChannel {
             break;
           case 'CHAT':
             this.onChatMessage(this.peerId, packet.payload as ChatMessage);
+            break;
+          case 'SCREEN_SHARE':
+            this.onScreenShareEvent?.(this.peerId, packet.payload as ScreenShareStatePayload);
             break;
           default:
             log.warn(`Unknown data channel packet type: ${packet.type}`);

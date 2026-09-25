@@ -6,6 +6,21 @@ import { ENV } from '../config/env';
 import { RegisterDto, LoginDto, AuthResponse, User } from '@meetdraw/shared';
 
 export class AuthService {
+  // In-memory active session tracking: userId -> sessionId
+  private static activeSessions: Map<string, string> = new Map();
+
+  static getActiveSession(userId: string): string | undefined {
+    return this.activeSessions.get(userId);
+  }
+
+  static setActiveSession(userId: string, sessionId: string): void {
+    this.activeSessions.set(userId, sessionId);
+  }
+
+  static invalidateSession(userId: string): void {
+    this.activeSessions.delete(userId);
+  }
+
   static async register(dto: RegisterDto): Promise<AuthResponse> {
     const email = dto.email.trim().toLowerCase();
     const username = dto.username.trim();
@@ -40,7 +55,9 @@ export class AuthService {
       createdAt: newUser.createdAt,
     };
 
-    const token = this.generateToken(user);
+    const sessionId = uuidv4();
+    this.setActiveSession(user.id, sessionId);
+    const token = this.generateToken(user, sessionId);
     return { token, user };
   }
 
@@ -63,13 +80,15 @@ export class AuthService {
       createdAt: userRecord.createdAt,
     };
 
-    const token = this.generateToken(user);
+    const sessionId = uuidv4();
+    this.setActiveSession(user.id, sessionId);
+    const token = this.generateToken(user, sessionId);
     return { token, user };
   }
 
-  static generateToken(user: User): string {
+  static generateToken(user: User, sessionId?: string): string {
     return jwt.sign(
-      { id: user.id, username: user.username, email: user.email },
+      { id: user.id, username: user.username, email: user.email, sessionId },
       ENV.JWT_SECRET,
       { expiresIn: '7d' }
     );

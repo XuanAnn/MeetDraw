@@ -15,6 +15,7 @@ export interface SfuCoordinatorListener {
   onStatsUpdated?: (stats: SfuStatsPayload) => void;
   onActiveSpeakerChanged?: (peerId: string) => void;
   onProducerListChanged?: (producers: SfuProducerInfo[]) => void;
+  onScreenShareChanged?: (sharer: { peerId: string; username: string; isSharing: boolean }) => void;
 }
 
 export class SfuCoordinator {
@@ -64,6 +65,14 @@ export class SfuCoordinator {
           signalingService.sendSfuConsume(this.roomId, prod.producerId, prod.peerId);
         }
 
+        if (prod.mediaType === 'screen') {
+          this.listeners.onScreenShareChanged?.({
+            peerId: prod.peerId,
+            username: prod.username,
+            isSharing: true,
+          });
+        }
+
         this.listeners.onProducerListChanged?.(Array.from(this.producers.values()));
       }
     );
@@ -73,6 +82,14 @@ export class SfuCoordinator {
       'SFU_PRODUCER_CLOSED',
       (msg) => {
         if (!msg.payload?.producerId) return;
+        const closedProd = this.producers.get(msg.payload.producerId);
+        if (closedProd && closedProd.mediaType === 'screen') {
+          this.listeners.onScreenShareChanged?.({
+            peerId: closedProd.peerId,
+            username: closedProd.username,
+            isSharing: false,
+          });
+        }
         this.producers.delete(msg.payload.producerId);
         log.info(`SFU: Producer closed ${msg.payload.producerId}`);
         this.listeners.onProducerListChanged?.(Array.from(this.producers.values()));
@@ -148,6 +165,13 @@ export class SfuCoordinator {
       signalingService.sendSfuProduce(this.roomId, 'video', 'screen');
       log.info('Published Screen Share track to SFU');
     }
+  }
+
+  // Close screen share track in SFU
+  closeScreenTrack() {
+    if (!this.roomId || !this.selfPeerId) return;
+    signalingService.sendSfuCloseProducer(this.roomId, 'screen');
+    log.info('Closed Screen Share track in SFU');
   }
 
   // Voice Activity Detection (VAD) via AudioContext

@@ -48,6 +48,13 @@ class ApiService {
     const data = await response.json().catch(() => null);
 
     if (!response.ok) {
+      if (response.status === 401 && data?.code === 'DUPLICATE_LOGIN') {
+        window.dispatchEvent(
+          new CustomEvent('session-terminated', {
+            detail: { reason: data.message || 'Tài khoản của bạn đã được đăng nhập từ một thiết bị hoặc trình duyệt khác.' },
+          })
+        );
+      }
       const errorMsg = data?.message || `Request failed with status ${response.status}`;
       throw new Error(errorMsg);
     }

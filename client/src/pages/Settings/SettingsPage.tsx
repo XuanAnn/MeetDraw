@@ -41,21 +41,21 @@ export const SettingsPage: React.FC = () => {
           className="inline-flex items-center space-x-1.5 text-xs text-gray-400 hover:text-gray-200 mb-6 transition"
         >
           <ArrowLeft size={14} />
-          <span>Back to Home</span>
+          <span>Quay lại Trang chủ</span>
         </Link>
 
-        <h1 className="text-2xl font-bold text-white mb-2">Settings & Diagnostics</h1>
+        <h1 className="text-2xl font-bold text-white mb-2">Cài đặt & Kiểm tra thiết bị</h1>
         <p className="text-xs text-gray-400 mb-6">
-          Configure profile preferences, WebRTC STUN/TURN servers, and test audio/video devices.
+          Tùy chỉnh thông tin người dùng và kiểm tra quyền truy cập micro, camera.
         </p>
 
         <div className="space-y-6">
           {/* User profile */}
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
-            <h2 className="text-sm font-semibold text-white mb-3">User Profile</h2>
+            <h2 className="text-sm font-semibold text-white mb-3">Thông tin người dùng</h2>
             <div className="space-y-3">
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Display Name</label>
+                <label className="block text-xs text-gray-400 mb-1">Tên hiển thị</label>
                 <input
                   type="text"
                   value={name}
@@ -68,7 +68,7 @@ export const SettingsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Avatar Color</label>
+                <label className="block text-xs text-gray-400 mb-1.5">Màu đại diện</label>
                 <div className="flex space-x-2">
                   {colors.map((c) => (
                     <button
@@ -88,20 +88,21 @@ export const SettingsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* WebRTC & Network Settings */}
+          {/* Network & Connection Status */}
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
             <div className="flex items-center space-x-2 mb-3">
-              <Server size={18} className="text-sky-400" />
-              <h2 className="text-sm font-semibold text-white">WebRTC & NAT Traversal</h2>
+              <Server size={18} className="text-emerald-400" />
+              <h2 className="text-sm font-semibold text-white">Trạng thái kết nối</h2>
             </div>
             <p className="text-xs text-gray-400 mb-3">
-              ICE Candidate Gathering Configuration (STUN / TURN).
+              Hệ thống kết nối thời gian thực cho âm thanh, video và bảng vẽ.
             </p>
-            <div className="bg-gray-950 p-3 rounded-xl border border-gray-800 font-mono text-[11px] text-gray-300 space-y-1">
-              <div>STUN 1: stun:stun.l.google.com:19302 (Public Google STUN)</div>
-              <div>STUN 2: stun:stun1.l.google.com:19302</div>
-              <div>STUN 3: stun:stun2.l.google.com:19302</div>
-              <div className="text-emerald-400 pt-1">Transport: UDP / SCTP / DTLS (DataChannel + SRTP)</div>
+            <div className="bg-gray-950 p-3 rounded-xl border border-gray-800 text-xs text-gray-300 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Máy chủ cuộc họp: Trực tuyến</span>
+              </div>
+              <span className="text-emerald-400 font-semibold text-[11px]">Sẵn sàng</span>
             </div>
           </div>
 
@@ -109,26 +110,26 @@ export const SettingsPage: React.FC = () => {
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
             <div className="flex items-center space-x-2 mb-3">
               <ShieldCheck size={18} className="text-emerald-400" />
-              <h2 className="text-sm font-semibold text-white">Hardware Diagnostics</h2>
+              <h2 className="text-sm font-semibold text-white">Kiểm tra thiết bị</h2>
             </div>
             <p className="text-xs text-gray-400 mb-4">
-              Verify microphone and webcam browser permissions.
+              Kiểm tra quyền truy cập microphone và camera của trình duyệt.
             </p>
 
             <button
               onClick={testDevices}
               className="bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs px-4 py-2 rounded-xl border border-gray-700 font-medium transition"
             >
-              Test Microphone & Camera
+              Kiểm tra Micro & Camera
             </button>
 
             {hasMicPermission !== null && (
               <div className="mt-3 flex space-x-4 text-xs">
                 <span className={hasMicPermission ? 'text-emerald-400' : 'text-rose-400'}>
-                  Mic: {hasMicPermission ? 'Authorized' : 'Unavailable/Denied'}
+                  Micro: {hasMicPermission ? 'Đã cấp quyền' : 'Không có quyền / Không tìm thấy'}
                 </span>
                 <span className={hasCamPermission ? 'text-emerald-400' : 'text-rose-400'}>
-                  Camera: {hasCamPermission ? 'Authorized' : 'Unavailable/Denied'}
+                  Camera: {hasCamPermission ? 'Đã cấp quyền' : 'Không có quyền / Không tìm thấy'}
                 </span>
               </div>
             )}

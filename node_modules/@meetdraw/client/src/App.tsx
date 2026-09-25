@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { UserProvider } from './stores/user.store';
 import { ProtectedRoute } from './components/Auth/ProtectedRoute';
+import { SessionTerminatedModal } from './components/Modal/SessionTerminatedModal';
 import { DashboardPage } from './pages/Dashboard/DashboardPage';
 import { GreenRoomPage } from './pages/GreenRoom/GreenRoomPage';
 import { WhiteboardRoomPage } from './pages/WhiteboardRoom/WhiteboardRoomPage';
@@ -12,6 +13,22 @@ import { ProjectHistoryPage } from './pages/ProjectHistory/ProjectHistoryPage';
 import { SettingsPage } from './pages/Settings/SettingsPage';
 
 export const App: React.FC = () => {
+  const [sessionTerminated, setSessionTerminated] = useState<{ isOpen: boolean; reason: string }>({
+    isOpen: false,
+    reason: '',
+  });
+
+  useEffect(() => {
+    const handleTerminated = (e: any) => {
+      setSessionTerminated({
+        isOpen: true,
+        reason: e.detail?.reason || 'Tài khoản của bạn đã được đăng nhập từ một thiết bị hoặc trình duyệt khác.',
+      });
+    };
+
+    window.addEventListener('session-terminated', handleTerminated);
+    return () => window.removeEventListener('session-terminated', handleTerminated);
+  }, []);
   return (
     <UserProvider>
       <BrowserRouter>
@@ -19,8 +36,7 @@ export const App: React.FC = () => {
           {/* Public Authentication Routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-
-          {/* Protected Routes (Requires Login Authentication via MySQL) */}
+          {/* Protected Routes */}
           <Route
             path="/"
             element={
@@ -80,6 +96,12 @@ export const App: React.FC = () => {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+
+        {/* Global Single-Session Kick Modal */}
+        <SessionTerminatedModal
+          isOpen={sessionTerminated.isOpen}
+          reason={sessionTerminated.reason}
+        />
       </BrowserRouter>
     </UserProvider>
   );

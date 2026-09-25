@@ -13,6 +13,7 @@ import {
   SfuPauseProducerPayload,
   SfuActiveSpeakerPayload,
   SfuProducerInfo,
+  SfuCloseProducerPayload,
   SfuStatsPayload,
 } from '@meetdraw/shared';
 import { createLogger } from '../utils/logger';
@@ -76,6 +77,12 @@ class SignalingService {
               this.lastMessages.set(message.type, message);
             }
 
+            if (message.type === 'SESSION_TERMINATED') {
+              log.warn('SESSION_TERMINATED: Single-session policy triggered', message.payload);
+              this.shouldReconnect = false;
+              clearTimeout(this.reconnectTimeout);
+            }
+
             this.dispatch(message);
           } catch (err) {
             log.error('Failed to parse incoming signal message:', err);
@@ -86,6 +93,10 @@ class SignalingService {
           log.warn(`WebSocket connection closed (Code: ${event.code})`);
           this.isConnecting = false;
           this.ws = null;
+          if (event.code === 4001) {
+            this.shouldReconnect = false;
+            clearTimeout(this.reconnectTimeout);
+          }
           if (this.shouldReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
             const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 10000);
@@ -219,6 +230,16 @@ class SignalingService {
       roomId,
       senderId: this.selfPeerId,
       payload: { producerId, paused },
+    });
+  }
+
+  sendSfuCloseProducer(roomId: string, mediaType: 'camera' | 'screen' = 'screen', producerId?: string) {
+    if (!this.selfPeerId) return;
+    this.send<SfuCloseProducerPayload>({
+      type: 'SFU_CLOSE_PRODUCER',
+      roomId,
+      senderId: this.selfPeerId,
+      payload: { mediaType, producerId },
     });
   }
 

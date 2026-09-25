@@ -9,12 +9,14 @@ export type SignalType =
   | 'ICE_CANDIDATE'
   | 'ROOM_USERS'
   | 'ERROR'
+  | 'SESSION_TERMINATED'
   | 'SFU_PRODUCE'
   | 'SFU_PRODUCE_ACK'
   | 'SFU_CONSUME'
   | 'SFU_CONSUME_ACK'
   | 'SFU_PRODUCER_ADDED'
   | 'SFU_PRODUCER_CLOSED'
+  | 'SFU_CLOSE_PRODUCER'
   | 'SFU_PAUSE_PRODUCER'
   | 'SFU_RESUME_PRODUCER'
   | 'SFU_ACTIVE_SPEAKER'
@@ -78,6 +80,11 @@ export interface ErrorPayload {
   code?: string;
 }
 
+export interface SessionTerminatedPayload {
+  reason: string;
+  code?: 'DUPLICATE_LOGIN' | 'CONCURRENT_SESSION';
+}
+
 export interface SfuProducerInfo {
   producerId: string;
   peerId: string;
@@ -117,6 +124,11 @@ export interface SfuProducerClosedPayload {
   producerId: string;
   peerId: string;
   kind: 'audio' | 'video';
+}
+
+export interface SfuCloseProducerPayload {
+  producerId?: string;
+  mediaType?: 'camera' | 'screen';
 }
 
 export interface SfuPauseProducerPayload {

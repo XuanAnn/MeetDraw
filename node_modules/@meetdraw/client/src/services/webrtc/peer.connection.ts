@@ -13,6 +13,7 @@ export class SinglePeerConnection {
   public readonly pc: RTCPeerConnection;
   private dataChannel: ManagedDataChannel | null = null;
   private remoteStream: MediaStream = new MediaStream();
+  private remoteScreenStream: MediaStream = new MediaStream();
   private pendingCandidates: RTCIceCandidateInit[] = [];
   private isSettingRemoteDescription = false;
   private callbacks: PeerConnectionCallback;
@@ -23,63 +24,101 @@ export class SinglePeerConnection {
     this.callbacks = callbacks;
     this.pc = new RTCPeerConnection(config || DEFAULT_RTC_CONFIGURATION);
 
+    // Pre-initialize transceivers: 1 audio, 1 camera video, 1 screen video
+    try {
+      this.pc.addTransceiver('audio', { direction: 'sendrecv' });
+      this.pc.addTransceiver('video', { direction: 'sendrecv' }); // Camera
+      this.pc.addTransceiver('video', { direction: 'sendrecv' }); // Screen Share
+    } catch (e) {
+      this.log.warn('Could not pre-initialize transceivers:', e);
+    }
+
     this.bindEvents();
   }
 
-  private handleIncomingTrack(track: MediaStreamTrack, stream?: MediaStream) {
+  private handleIncomingTrack(track: MediaStreamTrack, transceiver?: RTCRtpTransceiver) {
     if (!track) return;
 
-    if (stream) {
-      stream.getTracks().forEach((t) => {
-        if (!this.remoteStream.getTracks().some((existing) => existing.id === t.id)) {
-          this.remoteStream.addTrack(t);
-        }
-      });
-    }
+    const videoTransceivers = this.pc.getTransceivers().filter(
+      (t) => t.receiver?.track?.kind === 'video'
+    );
+    // Transceiver index 1 in video transceivers is reserved for Screen Share
+    const isScreenVideo =
+      track.kind === 'video' &&
+      ((transceiver && videoTransceivers.length > 1 && transceiver === videoTransceivers[1]) ||
+        (videoTransceivers.length > 1 && videoTransceivers[1]?.receiver?.track?.id === track.id));
 
-    if (!this.remoteStream.getTracks().some((existing) => existing.id === track.id)) {
-      this.remoteStream.addTrack(track);
-    }
-
-    const notify = () => {
-      const tracks = this.remoteStream.getTracks();
-      if (tracks.length > 0) {
-        const updatedStream = new MediaStream(tracks);
-        this.callbacks.onTrack(this.peerId, updatedStream);
+    if (isScreenVideo) {
+      if (!this.remoteScreenStream.getTracks().some((t) => t.id === track.id)) {
+        this.remoteScreenStream.getTracks().forEach((t) => this.remoteScreenStream.removeTrack(t));
+        this.remoteScreenStream.addTrack(track);
       }
-    };
 
-    if (!(track as any).__hasListeners) {
-      (track as any).__hasListeners = true;
-      track.onunmute = () => {
-        this.log.info(`Track onunmute (${track.kind}) from ${this.peerId}`);
-        notify();
+      const notifyScreen = () => {
+        const liveTracks = this.remoteScreenStream.getVideoTracks().filter((t) => t.readyState === 'live');
+        if (liveTracks.length > 0) {
+          this.callbacks.onScreenTrack?.(this.peerId, this.remoteScreenStream);
+        } else {
+          this.callbacks.onScreenTrack?.(this.peerId, null);
+        }
       };
-      track.onmute = () => {
-        this.log.info(`Track onmute (${track.kind}) from ${this.peerId}`);
-        notify();
+
+      if (!(track as any).__hasScreenListeners) {
+        (track as any).__hasScreenListeners = true;
+        track.onunmute = () => {
+          this.log.info(`Screen track onunmute from ${this.peerId}`);
+          notifyScreen();
+        };
+        track.onmute = () => {
+          this.log.info(`Screen track onmute from ${this.peerId}`);
+          notifyScreen();
+        };
+        track.onended = () => {
+          this.log.info(`Screen track onended from ${this.peerId}`);
+          this.callbacks.onScreenTrack?.(this.peerId, null);
+        };
+      }
+
+      notifyScreen();
+    } else {
+      // Camera or Audio track
+      if (!this.remoteStream.getTracks().some((existing) => existing.id === track.id)) {
+        this.remoteStream.addTrack(track);
+      }
+
+      const notifyCamera = () => {
+        const tracks = this.remoteStream.getTracks();
+        if (tracks.length > 0) {
+          const updatedStream = new MediaStream(tracks);
+          this.callbacks.onTrack(this.peerId, updatedStream);
+        }
       };
-      track.onended = () => {
-        this.log.info(`Track onended (${track.kind}) from ${this.peerId}`);
-        notify();
-      };
+
+      if (!(track as any).__hasCameraListeners) {
+        (track as any).__hasCameraListeners = true;
+        track.onunmute = () => {
+          this.log.info(`Camera/Audio track onunmute (${track.kind}) from ${this.peerId}`);
+          notifyCamera();
+        };
+        track.onmute = () => {
+          this.log.info(`Camera/Audio track onmute (${track.kind}) from ${this.peerId}`);
+          notifyCamera();
+        };
+        track.onended = () => {
+          this.log.info(`Camera/Audio track onended (${track.kind}) from ${this.peerId}`);
+          notifyCamera();
+        };
+      }
+
+      notifyCamera();
     }
-
-    notify();
   }
 
   public syncRemoteTracks() {
-    const receivers = this.pc.getReceivers ? this.pc.getReceivers() : [];
-    for (const receiver of receivers) {
-      if (receiver.track) {
-        this.handleIncomingTrack(receiver.track);
-      }
-    }
-
     const transceivers = this.pc.getTransceivers ? this.pc.getTransceivers() : [];
     for (const transceiver of transceivers) {
       if (transceiver.receiver?.track) {
-        this.handleIncomingTrack(transceiver.receiver.track);
+        this.handleIncomingTrack(transceiver.receiver.track, transceiver);
       }
     }
   }
@@ -109,7 +148,7 @@ export class SinglePeerConnection {
 
     this.pc.ontrack = (event) => {
       this.log.info(`REMOTE_TRACK ${event.track.kind} from ${this.peerId} (state: ${event.track.readyState}, muted: ${event.track.muted})`);
-      this.handleIncomingTrack(event.track, event.streams?.[0]);
+      this.handleIncomingTrack(event.track, event.transceiver);
     };
 
     this.pc.ondatachannel = (event) => {
@@ -117,6 +156,7 @@ export class SinglePeerConnection {
       this.dataChannel = new ManagedDataChannel(event.channel, this.peerId, {
         onWhiteboardEvent: this.callbacks.onWhiteboardEvent,
         onChatMessage: this.callbacks.onChatMessage,
+        onScreenShareEvent: (pId, payload) => this.callbacks.onScreenShareEvent?.(pId, payload),
         onOpen: () => this.callbacks.onDataChannelOpen(this.peerId),
         onClose: () => this.callbacks.onDataChannelClose(this.peerId),
       });
@@ -129,6 +169,7 @@ export class SinglePeerConnection {
     this.dataChannel = new ManagedDataChannel(channel, this.peerId, {
       onWhiteboardEvent: this.callbacks.onWhiteboardEvent,
       onChatMessage: this.callbacks.onChatMessage,
+      onScreenShareEvent: (pId, payload) => this.callbacks.onScreenShareEvent?.(pId, payload),
       onOpen: () => this.callbacks.onDataChannelOpen(this.peerId),
       onClose: () => this.callbacks.onDataChannelClose(this.peerId),
     });
@@ -138,61 +179,93 @@ export class SinglePeerConnection {
   async addLocalStream(stream: MediaStream): Promise<boolean> {
     let changed = false;
 
-    for (const track of stream.getTracks()) {
-      try {
-        // 1. Check if a sender already exists for this track kind
-        const sender = this.pc.getSenders().find((s) => s.track?.kind === track.kind || (s as any).kind === track.kind);
-        if (sender) {
-          if (sender.track?.id !== track.id) {
-            await sender.replaceTrack(track);
-            changed = true;
-            this.log.info(`Replaced ${track.kind} track on sender for peer ${this.peerId}`);
-          }
-          // Ensure associated transceiver direction is sendrecv
-          const transceiver = this.pc.getTransceivers?.().find((t) => t.sender === sender);
-          if (transceiver && transceiver.direction !== 'sendrecv') {
-            transceiver.direction = 'sendrecv';
-            changed = true;
-          }
-          continue;
-        }
-
-        // 2. Check if an existing transceiver without a sender track can be used
-        const transceivers = this.pc.getTransceivers ? this.pc.getTransceivers() : [];
-        const transceiver = transceivers.find(
-          (t) => !t.sender?.track && t.receiver?.track?.kind === track.kind
-        );
-        if (transceiver) {
-          transceiver.direction = 'sendrecv';
-          await transceiver.sender.replaceTrack(track);
+    // 1. Audio track -> audio transceiver
+    const audioTrack = stream.getAudioTracks()[0];
+    if (audioTrack) {
+      const audioTransceivers = this.pc.getTransceivers().filter(
+        (t) => t.receiver?.track?.kind === 'audio' || t.sender?.track?.kind === 'audio'
+      );
+      const audioSender = audioTransceivers[0]?.sender || this.pc.getSenders().find((s) => s.track?.kind === 'audio');
+      if (audioSender) {
+        if (audioSender.track?.id !== audioTrack.id) {
+          await audioSender.replaceTrack(audioTrack);
           changed = true;
-          this.log.info(`Associated ${track.kind} track with existing transceiver for peer ${this.peerId}`);
-          continue;
+          this.log.info(`Attached audio track for peer ${this.peerId}`);
         }
-
-        // 3. Otherwise add new track directly bound to stream
-        this.pc.addTrack(track, stream);
+      } else {
+        this.pc.addTrack(audioTrack, stream);
         changed = true;
-        this.log.info(`ADD_LOCAL_TRACK ${track.kind} via addTrack for peer ${this.peerId}`);
-      } catch (err) {
-        this.log.warn(`Could not add/replace track ${track.kind}:`, err);
       }
     }
+
+    // 2. Camera Video track (Dedicated Camera Transceiver - NEVER overwrites Screen Share)
+    const videoTrack = stream.getVideoTracks()[0];
+    if (videoTrack) {
+      const videoTransceivers = this.pc.getTransceivers().filter(
+        (t) => t.receiver?.track?.kind === 'video' || t.sender?.track?.kind === 'video'
+      );
+      // Index 0 in video transceivers is exclusively reserved for Camera
+      const cameraTransceiver = videoTransceivers[0];
+      const cameraSender = cameraTransceiver?.sender || this.pc.getSenders().find((s) => s.track?.kind === 'video');
+      if (cameraSender) {
+        if (cameraSender.track?.id !== videoTrack.id) {
+          await cameraSender.replaceTrack(videoTrack);
+          changed = true;
+          this.log.info(`Attached CAMERA track on peer ${this.peerId}`);
+        }
+      } else {
+        this.pc.addTrack(videoTrack, stream);
+        changed = true;
+      }
+    }
+
     return changed;
   }
 
+  async setScreenTrack(screenTrack: MediaStreamTrack | null): Promise<boolean> {
+    try {
+      const videoTransceivers = this.pc.getTransceivers().filter(
+        (t) => t.receiver?.track?.kind === 'video' || t.sender?.track?.kind === 'video'
+      );
+      // Index 1 in video transceivers is exclusively reserved for Screen Share
+      let screenSender = videoTransceivers[1]?.sender;
+
+      if (!screenSender && screenTrack) {
+        const newTransceiver = this.pc.addTransceiver(screenTrack, { direction: 'sendrecv' });
+        screenSender = newTransceiver.sender;
+      }
+
+      if (screenSender) {
+        await screenSender.replaceTrack(screenTrack);
+        this.log.info(`setScreenTrack on peer ${this.peerId} to track ${screenTrack?.id || 'null'}`);
+        return true;
+      }
+    } catch (err) {
+      this.log.warn(`setScreenTrack failed for peer ${this.peerId}:`, err);
+    }
+    return false;
+  }
+
   async createOffer(): Promise<RTCSessionDescriptionInit> {
-    const hasAudioSender = this.pc.getSenders().some((s) => s.track?.kind === 'audio');
-    const hasVideoSender = this.pc.getSenders().some((s) => s.track?.kind === 'video');
-    if (!hasAudioSender) {
+    const audioTransceivers = this.pc.getTransceivers().filter(
+      (t) => t.receiver?.track?.kind === 'audio' || t.sender?.track?.kind === 'audio'
+    );
+    const videoTransceivers = this.pc.getTransceivers().filter(
+      (t) => t.receiver?.track?.kind === 'video' || t.sender?.track?.kind === 'video'
+    );
+
+    if (audioTransceivers.length === 0) {
       try {
-        this.pc.addTransceiver('audio', { direction: 'recvonly' });
+        this.pc.addTransceiver('audio', { direction: 'sendrecv' });
       } catch (e) {}
     }
-    if (!hasVideoSender) {
+    while (videoTransceivers.length < 2) {
       try {
-        this.pc.addTransceiver('video', { direction: 'recvonly' });
-      } catch (e) {}
+        const t = this.pc.addTransceiver('video', { direction: 'sendrecv' });
+        videoTransceivers.push(t);
+      } catch (e) {
+        break;
+      }
     }
 
     const offer = await this.pc.createOffer({
@@ -205,6 +278,12 @@ export class SinglePeerConnection {
   }
 
   async createAnswer(): Promise<RTCSessionDescriptionInit> {
+    const transceivers = this.pc.getTransceivers ? this.pc.getTransceivers() : [];
+    for (const t of transceivers) {
+      if (t.direction === 'recvonly') {
+        t.direction = 'sendrecv';
+      }
+    }
     const answer = await this.pc.createAnswer();
     await this.pc.setLocalDescription(answer);
     this.log.info(`CREATE_ANSWER for peer ${this.peerId}`);
@@ -260,9 +339,14 @@ export class SinglePeerConnection {
     return this.remoteStream;
   }
 
+  getRemoteScreenStream(): MediaStream {
+    return this.remoteScreenStream;
+  }
+
   close() {
     this.dataChannel?.close();
     this.remoteStream.getTracks().forEach((t) => t.stop());
+    this.remoteScreenStream.getTracks().forEach((t) => t.stop());
     this.pc.close();
   }
 }

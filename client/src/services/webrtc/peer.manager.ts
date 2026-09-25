@@ -10,6 +10,7 @@ import {
   UserLeftPayload,
   RoomJoinedPayload,
   SfuStatsPayload,
+  ScreenShareStatePayload,
 } from '@meetdraw/shared';
 import { SinglePeerConnection } from './peer.connection';
 import { PeerConnectionCallback } from './peer.types';
@@ -28,12 +29,14 @@ export interface ConnectedPeerInfo {
 export type PeerManagerListener = {
   onPeersUpdated?: (peers: ConnectedPeerInfo[]) => void;
   onRemoteStream?: (peerId: string, stream: MediaStream) => void;
+  onRemoteScreenStream?: (peerId: string, stream: MediaStream | null) => void;
   onRemoteStreamRemoved?: (peerId: string) => void;
   onWhiteboardEvent?: (peerId: string, event: WhiteboardEvent) => void;
   onChatMessage?: (peerId: string, message: ChatMessage) => void;
   onPeerStateChange?: (peerId: string, state: RTCPeerConnectionState) => void;
   onSfuStats?: (stats: SfuStatsPayload) => void;
   onActiveSpeaker?: (speakerId: string) => void;
+  onScreenShareState?: (sharer: { peerId: string; username: string } | null) => void;
 };
 
 export class PeerManager {
@@ -43,6 +46,8 @@ export class PeerManager {
   private listeners: PeerManagerListener = {};
   private unsubscribers: Array<() => void> = [];
   private localStream: MediaStream | null = null;
+  private activeScreenSharer: { peerId: string; username: string } | null = null;
+  private currentScreenStream: MediaStream | null = null;
   private pendingInitialOffers = new Set<string>();
   private negotiatingPeers = new Set<string>();
 
@@ -60,6 +65,14 @@ export class PeerManager {
       },
       onActiveSpeakerChanged: (speakerId) => {
         this.listeners.onActiveSpeaker?.(speakerId);
+      },
+      onScreenShareChanged: (sharer) => {
+        if (sharer.isSharing) {
+          this.activeScreenSharer = { peerId: sharer.peerId, username: sharer.username };
+        } else if (this.activeScreenSharer?.peerId === sharer.peerId) {
+          this.activeScreenSharer = null;
+        }
+        this.listeners.onScreenShareState?.(this.activeScreenSharer);
       },
     });
 
@@ -220,8 +233,25 @@ export class PeerManager {
           this.listeners.onRemoteStream(pId, stream);
         }
       },
+      onScreenTrack: (pId, stream) => {
+        if (this.listeners.onRemoteScreenStream) {
+          this.listeners.onRemoteScreenStream(pId, stream);
+        }
+      },
       onDataChannelOpen: (pId) => {
         log.info(`DataChannel ready with ${pId}`);
+        // If we are currently sharing screen, notify this newly connected peer
+        if (this.currentScreenStream) {
+          const packet: DataChannelPacket = {
+            type: 'SCREEN_SHARE',
+            payload: {
+              isSharing: true,
+              peerId: signalingService.selfPeerId || 'local',
+              username: 'Tôi',
+            } as ScreenShareStatePayload,
+          };
+          this.peers.get(pId)?.sendData(packet);
+        }
       },
       onDataChannelClose: (pId) => {
         log.info(`DataChannel closed with ${pId}`);
@@ -236,6 +266,19 @@ export class PeerManager {
           this.listeners.onChatMessage(pId, msg);
         }
       },
+      onScreenShareEvent: (pId, payload) => {
+        if (payload.isSharing) {
+          this.activeScreenSharer = { peerId: payload.peerId, username: payload.username };
+          const p = this.peers.get(payload.peerId);
+          if (p) {
+            this.listeners.onRemoteScreenStream?.(payload.peerId, p.getRemoteScreenStream());
+          }
+        } else if (this.activeScreenSharer?.peerId === payload.peerId) {
+          this.activeScreenSharer = null;
+          this.listeners.onRemoteScreenStream?.(payload.peerId, null);
+        }
+        this.listeners.onScreenShareState?.(this.activeScreenSharer);
+      },
     };
 
     const newPeer = new SinglePeerConnection(peerId, callbacks);
@@ -244,6 +287,13 @@ export class PeerManager {
     const localStream = this.localStream || mediaStreamManager.getStream();
     if (localStream) {
       void newPeer.addLocalStream(localStream);
+    }
+
+    if (this.currentScreenStream) {
+      const screenTrack = this.currentScreenStream.getVideoTracks()[0];
+      if (screenTrack) {
+        void newPeer.setScreenTrack(screenTrack);
+      }
     }
 
     this.notifyPeersUpdated();
@@ -267,6 +317,11 @@ export class PeerManager {
       peer.close();
       this.peers.delete(peerId);
       this.peerUsernames.delete(peerId);
+      if (this.activeScreenSharer?.peerId === peerId) {
+        this.activeScreenSharer = null;
+        this.listeners.onScreenShareState?.(null);
+        this.listeners.onRemoteScreenStream?.(peerId, null);
+      }
       if (this.listeners.onRemoteStreamRemoved) {
         this.listeners.onRemoteStreamRemoved(peerId);
       }
@@ -340,8 +395,34 @@ export class PeerManager {
     }
   }
 
-  publishScreenTrack(screenStream: MediaStream) {
-    sfuCoordinator.publishScreenTrack(screenStream);
+  async publishScreenTrack(screenStream: MediaStream | null, username = 'Tôi') {
+    this.currentScreenStream = screenStream;
+    const isSharing = !!screenStream;
+    const screenTrack = screenStream ? screenStream.getVideoTracks()[0] || null : null;
+
+    // 1. Send screen track on dedicated screen transceiver across all P2P connections
+    // Camera track is 100% untouched and continues streaming uninterrupted!
+    for (const peer of this.peers.values()) {
+      await peer.setScreenTrack(screenTrack);
+    }
+
+    // 2. Broadcast screen share state packet to all peers via DataChannel
+    const packet: DataChannelPacket = {
+      type: 'SCREEN_SHARE',
+      payload: {
+        isSharing,
+        peerId: signalingService.selfPeerId || 'local',
+        username,
+      } as ScreenShareStatePayload,
+    };
+    this.broadcastData(packet);
+
+    // 3. Coordinate with SFU
+    if (isSharing && screenStream) {
+      sfuCoordinator.publishScreenTrack(screenStream);
+    } else {
+      sfuCoordinator.closeScreenTrack();
+    }
   }
 
   private async attachStreamAndNegotiate(
@@ -370,6 +451,8 @@ export class PeerManager {
     this.peers.clear();
     this.peerUsernames.clear();
     this.localStream = null;
+    this.activeScreenSharer = null;
+    this.currentScreenStream = null;
     this.pendingInitialOffers.clear();
     this.negotiatingPeers.clear();
     this.roomId = null;

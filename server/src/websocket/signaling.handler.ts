@@ -12,6 +12,7 @@ import {
   SfuConsumeAckPayload,
   SfuProducerAddedPayload,
   SfuProducerClosedPayload,
+  SfuCloseProducerPayload,
   SfuPauseProducerPayload,
   SfuActiveSpeakerPayload,
   SfuStatsPayload,
@@ -59,6 +60,10 @@ export class SignalingHandler {
           this.handleSfuPauseProducer(roomId, senderId, payload as SfuPauseProducerPayload);
           break;
 
+        case 'SFU_CLOSE_PRODUCER':
+          this.handleSfuCloseProducer(roomId, senderId, payload as SfuCloseProducerPayload);
+          break;
+
         case 'SFU_ACTIVE_SPEAKER':
           this.handleSfuActiveSpeaker(roomId, senderId, payload as SfuActiveSpeakerPayload);
           break;
@@ -81,13 +86,30 @@ export class SignalingHandler {
   ): Promise<void> {
     const username = (payload && payload.username) ? payload.username.trim() : `User-${peerId.substring(0, 4)}`;
     const userId = payload && payload.userId ? payload.userId : undefined;
+    const email = payload && payload.email ? payload.email : undefined;
 
     // Verify or fetch room info
     const roomDetails = await RoomService.getRoomDetails(roomId);
     const roomName = roomDetails ? roomDetails.name : `Room ${roomId}`;
 
-    // Join in roomManager
-    const { peers, isHost } = roomManager.joinRoom(roomId, peerId, username, ws, userId);
+    // Join in roomManager with duplicate session detection
+    const { peers, isHost, kickedPeer } = roomManager.joinRoom(roomId, peerId, username, ws, userId, email);
+
+    // If an old session was kicked, clean up its SFU resources and broadcast USER_LEFT
+    if (kickedPeer) {
+      sfuManager.removePeer(kickedPeer.id);
+      const userLeftMsg: SignalMessage<UserLeftPayload> = {
+        type: 'USER_LEFT',
+        roomId,
+        senderId: kickedPeer.id,
+        payload: {
+          peerId: kickedPeer.id,
+          reason: 'User session replaced by new browser login',
+        },
+      };
+      roomManager.broadcastToRoom(roomId, userLeftMsg);
+    }
+
     sfuManager.registerPeer(roomId, peerId);
 
     // 1. Send back confirmation with existing peers list
@@ -291,6 +313,35 @@ export class SignalingHandler {
       },
     };
     roomManager.broadcastToRoom(roomId, pauseMsg);
+  }
+
+  private static handleSfuCloseProducer(
+    roomId: string,
+    peerId: string,
+    payload: SfuCloseProducerPayload
+  ): void {
+    const producers = sfuManager.getProducersInRoom(roomId);
+    for (const prod of producers) {
+      if (
+        prod.peerId === peerId &&
+        (!payload?.producerId || prod.id === payload.producerId) &&
+        (!payload?.mediaType || prod.mediaType === payload.mediaType)
+      ) {
+        sfuManager.closeProducer(roomId, prod.id);
+        const prodClosedMsg: SignalMessage<SfuProducerClosedPayload> = {
+          type: 'SFU_PRODUCER_CLOSED',
+          roomId,
+          senderId: 'sfu-router',
+          payload: {
+            producerId: prod.id,
+            peerId,
+            kind: prod.kind,
+          },
+        };
+        roomManager.broadcastToRoom(roomId, prodClosedMsg);
+      }
+    }
+    this.broadcastSfuStats(roomId);
   }
 
   private static handleSfuActiveSpeaker(
